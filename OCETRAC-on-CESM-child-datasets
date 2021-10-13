@@ -42,7 +42,8 @@ print(detrended.shape)
 # detrended = scipy.signal.detrend(ds.SST, axis=0)
 
 # ------------------------------------------------------------------------------------ DETRENDING - Method 3
-## Use xscale (but running into some problems installing)
+## Use xscale (but running into some problems with dim)
+## xscale.signal.fitting.detrend(ds.SST, dim='time', type='linear') # dim = time does not work
 
 monthly = ds.groupby('time.month').mean('time') # monthly climatology that includes climate change signal
 print(monthly.SST.isel(month=0))
