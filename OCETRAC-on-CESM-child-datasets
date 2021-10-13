@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+### Applying Ocetrac to CESM2 Sample Dataset
+##### Loading in packages
+import s3fs; import xarray as xr; import numpy as np
+import pandas as pd; import dask.array as da; import ocetrac
+
+import matplotlib.pyplot as plt; import cartopy.crs as ccrs
+
+import warnings; import expectexception
+warnings.filterwarnings('ignore')
+
+import netCDF4 as nc; import datetime as dt
+import scipy
+
+##### Loading in sample file
+ncfile = '/Users/cassiacai/Desktop/CESM-child-datasets/outfile.nc' #an aggregate of child datasets 1850 to 2014
+ds = xr.open_mfdataset(ncfile,parallel=True)
+print(ds.SST)
+
+##### Feature thresholding
+# ------------------------------------------------------------------------------------ DETRENDING - Method 1
+### Source code from here: https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
+def detrend_dim(da, dim, deg=1):
+    # detrend along a single dimension
+    p = da.polyfit(dim=dim, deg=deg)
+    fit = xr.polyval(da[dim], p.polyfit_coefficients)
+    return da - fit
+
+def detrend(da, dims, deg=1):
+    # detrend along multiple dimensions only valid for linear detrending (deg=1)
+    da_detrended = da
+    for dim in dims:
+        da_detrended = detrend_dim(da_detrended, dim, deg=deg)
+    return da_detrended
+    
+detrended = detrend_dim(ds.SST, dim='time')
+print(detrended)
+print(detrended.shape)
+
+# ------------------------------------------------------------------------------------ DETRENDING - Method 2
+# detrended = scipy.signal.detrend(ds.SST, axis=0)
+
+# ------------------------------------------------------------------------------------ DETRENDING - Method 3
+## Use xscale (but running into some problems installing)
+
+monthly = ds.groupby('time.month').mean('time') # monthly climatology that includes climate change signal
+print(monthly.SST.isel(month=0))
+
+monthly_clim_detrended = detrended.groupby('time.month').mean('time') # monthly climatology that excludes climate change signal
+print(monthly_clim_detrended.isel(month=0))
+
+# print(monthly)  # Dimensions:  (lat: 192, lon: 288, month: 12)
+# print(monthly_clim_detrended) # Dimensions:  (lat: 192, lon: 288, month: 12)
+
+result = ds.groupby('time.month') - monthly #this is the anomaly
+# print(result) # Dimensions:  (lat: 192, lon: 288, time: 1980)
+
+result_detrended = ds.SST.groupby('time.month') - monthly_clim_detrended
+print(result_detrended) # Dimensions:  (lat: 192, lon: 288, time: 1980)
