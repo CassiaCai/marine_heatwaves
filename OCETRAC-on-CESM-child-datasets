@@ -50,7 +50,7 @@ print(detrended.shape)
 monthly = ds.groupby('time.month').mean('time') # monthly climatology that includes climate change signal
 print(monthly.SST.isel(month=0))
 
-monthly_clim_detrended = detrended.groupby('time.month').mean('time') # monthly anomalies from detrend
+monthly_clim_detrended = detrended.groupby('time.month').mean('time') # monthly climatology after detrending
 print(monthly_clim_detrended.isel(month=0))
 
 # print(monthly)  # Dimensions:  (lat: 192, lon: 288, month: 12)
@@ -59,19 +59,17 @@ print(monthly_clim_detrended.isel(month=0))
 result = ds.groupby('time.month') - monthly #this is the anomaly that includes climate change signal
 # print(result) # Dimensions:  (lat: 192, lon: 288, time: 1980)
 
-print(detrended.shape) #anomalies
-print(monthly_clim_detrended.shape) #monthly climatology of anomalies
+result_detrended = ds.SST.groupby('time.month') - monthly_clim_detrended #anomalies # CHECK THIS
+# print(result_detrended) # Dimensions: (time: 1980, lat: 192, lon: 288)
 
 ##### EXAMPLE PLOTS
 monthed = 0
-inCelsius = monthly.SST.isel(month=monthed)-273.15
-inCelsius.plot(levels=[-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35])
+inKel = monthly.SST.isel(month=monthed)
+inKel.plot(levels=[240,250,260,270,280,290,300,310])
 monthly.SST.isel(month=monthed).where(monthly.SST.isel(month=monthed)==0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
 
-inCelsius_detrended = monthly_clim_detrended.isel(month=monthed)
-inCelsius_detrended.plot(levels=[-5,-4,-3,-2,-1,0,1,2,3,4,5])
-monthly_clim_detrended.isel(month=monthed).where(monthly_clim_detrended.isel(month=monthed)==0).plot.contourf(colors='k', add_colorbar=False)
+plt.hist(inKel)
 plt.show()
 
 # Plot of anomaly and anomaly_detrended for one month 
