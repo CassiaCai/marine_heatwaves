@@ -101,10 +101,17 @@ features_ssta= features_ssta[:,:,:,:].load()
 ##### EXAMPLE PLOTS
 month_choice = 1
 sample_month = features_ssta.isel(month=month_choice)
+timed = 190
+print(np.nanmin(sample_month.isel(time=timed)))
+print(np.nanmax(sample_month.isel(time=timed)))
+print(np.nanmean(sample_month.isel(time=timed)))
 
-print(np.nanmin(sample_month.isel(time=0)))
-print(np.nanmax(sample_month.isel(time=0)))
-print(np.nanmean(sample_month.isel(time=0)))
+plt.hist(sample_month.isel(time=0))
 
-sample_month[190,:,:].plot()
-#sample_month.isel(time=189).plot() # another way to plot
+print(features_ssta.shape)
+
+inKel = sample_month[timed,:,:]
+inKel.plot(levels=[-3,-2,-1,0,1,2,3])
+sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0).plot.contourf(colors='k', add_colorbar=False)
+plt.show()
+
