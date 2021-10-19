@@ -18,6 +18,36 @@ ncfile = '/Users/cassiacai/Desktop/CESM-child-datasets/outfile.nc' #an aggregate
 ds = xr.open_mfdataset(ncfile,parallel=True)
 print(ds.SST)
 
+##### DECOMPOSE SST
+sst = ds.SST
+sst.load()
+
+### Decompose SST maps into mean, trend, annual, and semi-annual harmonics
+## Use least-squares regression and solve for model coefficients
+dyr = sst.time.dt.year + (sst.time.dt.month-0.5)/12
+
+# Our 6 coefficient model is composed of the mean, trend, annual sine and cosine harmonics, & semi-annual sine and cosine harmonics
+model = np.array([np.ones(len(dyr))] + [dyr-np.mean(dyr)] + [np.sin(2*np.pi*dyr)] + [np.cos(2*np.pi*dyr)] + [np.sin(4*np.pi*dyr)] + [np.cos(4*np.pi*dyr)])
+
+# Take the pseudo-inverse of model to 'solve' least-squares problem
+pmodel = np.linalg.pinv(model)
+
+# Convert model and pmodel to xaray DataArray
+model_da = xr.DataArray(model.T, dims=['time','coeff'], coords={'time':sst.time.values, 'coeff':np.arange(1,7,1)}) 
+pmodel_da = xr.DataArray(pmodel.T, dims=['coeff','time'], coords={'coeff':np.arange(1,7,1), 'time':sst.time.values})
+
+# resulting coefficients of the model
+sst_mod = xr.DataArray(pmodel_da.dot(sst), dims=['coeff','lat','lon'], coords={'coeff':np.arange(1,7,1), 'lat':sst.lat.values, 'lon':sst.lon.values})
+
+# Make a quick plot of the decomposition at a specific location
+# Construct mean, trend, and seasonal cycle
+mean = model_da[:,0].dot(sst_mod[0,:,:])
+trend = model_da[:,1].dot(sst_mod[1,:,:])
+seas = model_da[:,2:].dot(sst_mod[2:,:,:])
+
+# compute anomalies by removing all  the model coefficients 
+ssta_notrend = sst-model_da.dot(sst_mod) #this is anomalies
+
 ##### FEATURE THRESHOLDING
 # ------------------------------------------------------------------------------------ DETRENDING - Method 1
 ### Source code from here: https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
@@ -46,6 +76,8 @@ print(detrended.shape)
 ## import xscale
 ## xscale.signal.fitting.detrend(ds.SST, dim='time', type='linear') # dim = time does not work
 ## ds.SST.dims # output is: ('time', 'lat', 'lon')
+
+detrended = ssta_notrend
 
 monthly = ds.groupby('time.month').mean('time') # monthly climatology that includes climate change signal
 print(monthly.SST.isel(month=0))
@@ -84,7 +116,6 @@ results_inC_detrended.plot(levels=[-5,-4,-3,-2,-1,0,1,2,3,4,5])
 detrended.isel(time=timed).where(detrended.isel(time=timed)==0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
 
-##### FROM HILLARY'S CODE
 if detrended.chunks:
     detrended = detrended.chunk({'time': -1})
     print(detrended)
