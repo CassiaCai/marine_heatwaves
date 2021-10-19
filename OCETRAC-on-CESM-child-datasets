@@ -115,3 +115,16 @@ inKel.plot(levels=[-3,-2,-1,0,1,2,3])
 sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
 
+#features_ssta[0,:,:,0].plot() #another way to plot
+
+##### MASKING
+full_mask_land = features_ssta
+full_masked = full_mask_land.where(full_mask_land != 0)
+print(full_masked.shape)
+
+mask_land = features_ssta.isel(time=0)
+masked = mask_land.where(mask_land != 0)
+print(masked.shape) #(192, 288, 12)
+
+plt.contourf(masked.isel(month=5), levels=[-5.5,-5.,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5.,5.5],cmap = 'seismic')
+plt.colorbar()
