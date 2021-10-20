@@ -183,3 +183,12 @@ sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.con
 ax2 = plt.subplot(122); 
 full_masked[timed,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
 sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+
+##############################################
+# -------------------------------------------
+# Comments: Seems to be the threshold groupby
+# that is causing some problems as it seems
+# that blob attributes will change according
+# to the month choice.
+# -------------------------------------------
+##############################################
