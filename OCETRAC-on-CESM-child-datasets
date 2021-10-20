@@ -95,7 +95,7 @@ result_detrended = ds.SST.groupby('time.month') - monthly_clim_detrended #anomal
 # print(result_detrended) # Dimensions: (time: 1980, lat: 192, lon: 288)
 
 ##### EXAMPLE PLOTS
-monthed = 0
+monthed = 5
 inKel = monthly.SST.isel(month=monthed)
 inKel.plot(levels=[240,250,260,270,280,290,300,310])
 monthly.SST.isel(month=monthed).where(monthly.SST.isel(month=monthed)==0).plot.contourf(colors='k', add_colorbar=False)
@@ -104,7 +104,7 @@ plt.show()
 plt.hist(inKel)
 plt.show()
 
-# Plot of anomaly and anomaly_detrended for one month 
+# Other plots 
 timed = 800
 results_inC = result.SST.isel(time=timed)
 results_inC.plot(levels=[-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0,0.5,1,1.5,2,2.5,3,3.5,4])
@@ -116,6 +116,7 @@ results_inC_detrended.plot(levels=[-5,-4,-3,-2,-1,0,1,2,3,4,5])
 detrended.isel(time=timed).where(detrended.isel(time=timed)==0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
 
+###### THRESHOLD and FEATURES
 if detrended.chunks:
     detrended = detrended.chunk({'time': -1})
     print(detrended)
@@ -142,20 +143,43 @@ plt.hist(sample_month.isel(time=0))
 print(features_ssta.shape)
 
 inKel = sample_month[timed,:,:]
-inKel.plot(levels=[-3,-2,-1,0,1,2,3])
-sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0).plot.contourf(colors='k', add_colorbar=False)
+inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
+sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
-
-#features_ssta[0,:,:,0].plot() #another way to plot
 
 ##### MASKING
 full_mask_land = features_ssta
 full_masked = full_mask_land.where(full_mask_land != 0)
 print(full_masked.shape)
 
-mask_land = features_ssta.isel(time=0)
-masked = mask_land.where(mask_land != 0)
-print(masked.shape) #(192, 288, 12)
+full_masked[0,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds') # trying this
 
-plt.contourf(masked.isel(month=5), levels=[-5.5,-5.,-4.5,-4,-3.5,-3,-2.5,-2,-1.5,-1,-0.5,0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5.,5.5],cmap = 'seismic')
-plt.colorbar()
+full_masked[1978,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds') # trying this
+
+binary_out_afterlandmask=np.isfinite(full_masked)
+print(binary_out_afterlandmask.shape)
+
+binary_out_afterlandmask[timed,:,:,month_choice].plot()
+
+newmask = np.isfinite(ds.SST.isel(time=timed)) #------------------------------------------------------------------------- Not really what I'm looking for...
+newmask.plot()
+
+%%time
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:,5], newmask, radius=8, min_size_quartile=0.75, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+blobs = Tracker.track()
+
+blobs.attrs
+
+##### PLOTTING #--------------------------------------------------------------------------------------------- Plots do not really match... needs correction...
+from matplotlib.colors import ListedColormap
+maxl = int(np.nanmax(blobs.values))
+cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
+
+timed = 25
+plt.figure(figsize=(16,3))
+ax1 = plt.subplot(121);blobs.isel(time=timed).plot(cmap= cm)
+sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+
+ax2 = plt.subplot(122); 
+full_masked[timed,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
+sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
