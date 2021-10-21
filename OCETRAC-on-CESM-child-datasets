@@ -207,9 +207,40 @@ mo = Tracker._morphological_operations()
 mo.isel(time=0).plot()
 print(mo.shape)
 
-######### OCTOBER 21 2021 ##########
 datetimeindex_blobs = blobs.indexes['time'].to_datetimeindex()
 print(datetimeindex_blobs)
 blobs['time'] = datetimeindex_blobs
 
 blobs.sel(time=slice('01-01-2014', '04-01-2014')).plot(col='time', col_wrap=4)
+
+id = 60 #picking a random id
+event = blobs.where(blobs==id, drop=True)
+event.shape
+
+datetimeindex_ds_init = ds.indexes['time'].to_datetimeindex()
+print(datetimeindex_ds_init)
+ds['time'] = datetimeindex_ds_init
+
+datetimeindex_detrended = detrended.indexes['time'].to_datetimeindex()
+print(datetimeindex_detrended)
+detrended['time'] = datetimeindex_detrended
+
+event_intensity = detrended.where((ds.time==event.time) & (ds.lat==event.lat) & (ds.lon==event.lon), drop=True).load();
+event_intensity = event_intensity.expand_dims(dim='intensity', axis=3)
+events_contour = event.fillna(0)
+
+event_intensity[0,:,:,0].plot()
+event_intensity[1,:,:,0].plot()
+event_intensity[2,:,:,0].plot()
+
+#################### ------------------------------------------------------------------------------------------------
+# START DEBUGGING BELOW 
+plt.rc('font', size=12); plt.figure(figsize=(15,6));
+for i in enumerate(range(1,len(event.time))):
+    ax = plt.subplot(2,3,i[1],projection=ccrs.PlateCarree())
+    event_intensity.isel(time=i[0], intensity=0).plot(transform=ccrs.PlateCarree(), vmin=-2, vmax=2,  
+                                                      cmap='RdBu_r', extend='both', add_colorbar=True, add_labels=False)
+    plt.title(event.isel(time=i[0]).time.values.astype('datetime64[D]'))
+    ax.coastlines(resolution='110m', color='black', linewidth=1) 
+    ax.add_feature(cfeature.LAND, facecolor='w');
+    events_contour.isel(time=i[0]).plot.contour(levels=[34,35], transform=ccrs.PlateCarree(), colors='b', linewidths=4, add_colorbar=False, add_labels=False)
