@@ -146,29 +146,26 @@ if detrended.chunks:
     print(detrended)
 
 threshold = detrended.groupby('time.month').quantile(0.9,dim=('time')) 
-features_ssta = detrended.where(detrended>=threshold, other=np.nan) 
+features_ssta = detrended.where(detrended.groupby('time.month')>=threshold, other=np.nan)
 
 print(threshold.shape)
 print(features_ssta.shape)
 
 %%time
-features_ssta= features_ssta[:,:,:,:].load()
+features_ssta= features_ssta[:,:,:].load()
 
 ##### EXAMPLE PLOTS
 month_choice = 1
-sample_month = features_ssta.isel(month=month_choice)
 timed = 190
-print(np.nanmin(sample_month.isel(time=timed)))
-print(np.nanmax(sample_month.isel(time=timed)))
-print(np.nanmean(sample_month.isel(time=timed)))
+print(np.nanmin(features_ssta.isel(time=timed)))
+print(np.nanmax(features_ssta.isel(time=timed)))
+print(np.nanmean(features_ssta.isel(time=timed)))
 
-plt.hist(sample_month.isel(time=0))
+plt.hist(features_ssta.isel(time=0))
 
-print(features_ssta.shape)
-
-inKel = sample_month[timed,:,:]
+inKel = features_ssta[timed,:,:]
 inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
-sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
 plt.show()
 
 ##### MASKING
@@ -188,11 +185,9 @@ binary_out_afterlandmask[timed,:,:,month_choice].plot()
 newmask = np.isfinite(ds.SST.isel(time=timed)) #------------------------------------------------------------------------- Not really what I'm looking for...
 newmask.plot()
 
-%%time #------------------------------------------------------------------------- Choice of month binary_out_afterlandmask[:,:,:,5] seems to impact the output...
-Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:,5], newmask, radius=8, min_size_quartile=0.75, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+%%time
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmask, radius=2, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
 blobs = Tracker.track()
-
-blobs.attrs
 
 ##### PLOTTING #--------------------------------------------------------------------------------------------- Plots do not really match... needs correction...
 from matplotlib.colors import ListedColormap
@@ -207,10 +202,7 @@ sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.con
 ax2 = plt.subplot(122); 
 full_masked[timed,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
 sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+# Plotting end
 
-##############################################
-# -------------------------------------------
-# Comments: It seems that blob attributes will 
-# change according to the month choice.
-# -------------------------------------------
-##############################################
+mo = Tracker._morphological_operations()
+mo.isel(time=0).plot()
