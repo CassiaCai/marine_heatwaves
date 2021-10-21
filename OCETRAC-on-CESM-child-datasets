@@ -48,6 +48,31 @@ seas = model_da[:,2:].dot(sst_mod[2:,:,:])
 # compute anomalies by removing all  the model coefficients 
 ssta_notrend = sst-model_da.dot(sst_mod) #this is anomalies
 
+# Some plotting and checking
+dif_try = trend[7,:,:]-trend[0,:,:]
+dif_try.plot(cmap='seismic')
+
+mean[0,:,:].plot(levels=[262.5,265,267.2,270,272.5,275,277.5,280,282.5,285,287.5,290,292.5,295,297.5,300,302.5,305,307.5],cmap='Reds')
+
+# location of time series
+lon=seas.lon[170]
+print(lon)
+lat=seas.lat[145]
+print(lat)
+
+point_seas = seas.loc[dict(lon=lon, lat=lat)]
+point_mean = mean.loc[dict(lon=lon, lat=lat)]
+point_trend = trend.loc[dict(lon=lon, lat=lat)]
+point_variability = ssta_notrend.loc[dict(lon=lon, lat=lat)]
+
+datetimeindex = point_mean.indexes['time'].to_datetimeindex()
+point_seas['time'] = datetimeindex
+point_mean['time'] = datetimeindex
+point_trend['time'] = datetimeindex
+point_variability['time'] = datetimeindex
+
+point_seas.sel(time=slice('1850-02-01','1859-02-01')).plot()
+
 # ------------------------------------------------------------------------------------ DETRENDING - Method 1 #no need to do this with ssta_notrend from above
 ### Source code from here: https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
 def detrend_dim(da, dim, deg=1):
@@ -185,9 +210,7 @@ sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.con
 
 ##############################################
 # -------------------------------------------
-# Comments: Seems to be the threshold groupby
-# that is causing some problems as it seems
-# that blob attributes will change according
-# to the month choice.
+# Comments: It seems that blob attributes will 
+# change according to the month choice.
 # -------------------------------------------
 ##############################################
