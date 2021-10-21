@@ -188,7 +188,7 @@ binary_out_afterlandmask[timed,:,:,month_choice].plot()
 newmask = np.isfinite(ds.SST.isel(time=timed)) #------------------------------------------------------------------------- Not really what I'm looking for...
 newmask.plot()
 
-%%time
+%%time #------------------------------------------------------------------------- Choice of month binary_out_afterlandmask[:,:,:,5] seems to impact the output...
 Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:,5], newmask, radius=8, min_size_quartile=0.75, timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
 blobs = Tracker.track()
 
