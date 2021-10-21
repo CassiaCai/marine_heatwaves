@@ -48,8 +48,7 @@ seas = model_da[:,2:].dot(sst_mod[2:,:,:])
 # compute anomalies by removing all  the model coefficients 
 ssta_notrend = sst-model_da.dot(sst_mod) #this is anomalies
 
-##### FEATURE THRESHOLDING
-# ------------------------------------------------------------------------------------ DETRENDING - Method 1
+# ------------------------------------------------------------------------------------ DETRENDING - Method 1 #no need to do this with ssta_notrend from above
 ### Source code from here: https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
 def detrend_dim(da, dim, deg=1):
     # detrend along a single dimension
