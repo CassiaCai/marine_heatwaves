@@ -197,12 +197,19 @@ cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
 timed = 25
 plt.figure(figsize=(16,3))
 ax1 = plt.subplot(121);blobs.isel(time=timed).plot(cmap= cm)
-sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False); ax1.set_aspect('equal')
 
 ax2 = plt.subplot(122); 
 full_masked[timed,:,:,0].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
-sample_month.isel(time=timed).where(sample_month.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-# Plotting end
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False); ax2.set_aspect('equal')
 
 mo = Tracker._morphological_operations()
 mo.isel(time=0).plot()
+print(mo.shape)
+
+######### OCTOBER 21 2021 ##########
+datetimeindex_blobs = blobs.indexes['time'].to_datetimeindex()
+print(datetimeindex_blobs)
+blobs['time'] = datetimeindex_blobs
+
+blobs.sel(time=slice('01-01-2014', '04-01-2014')).plot(col='time', col_wrap=4)
