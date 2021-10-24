@@ -233,14 +233,10 @@ event_intensity[0,:,:,0].plot()
 event_intensity[1,:,:,0].plot()
 event_intensity[2,:,:,0].plot()
 
-#################### ------------------------------------------------------------------------------------------------
-# START DEBUGGING BELOW 
+##### PLOTTING
 plt.rc('font', size=12); plt.figure(figsize=(15,6));
 for i in enumerate(range(1,len(event.time))):
-    ax = plt.subplot(2,3,i[1],projection=ccrs.PlateCarree())
-    event_intensity.isel(time=i[0], intensity=0).plot(transform=ccrs.PlateCarree(), vmin=-2, vmax=2,  
-                                                      cmap='RdBu_r', extend='both', add_colorbar=True, add_labels=False)
+    ax = plt.subplot(2,3,i[1])
+    event_intensity.isel(time=i[0], intensity=0).plot(vmin=-2.5, vmax=2.5, cmap='RdBu_r', extend='both', add_colorbar=True, add_labels=False)
     plt.title(event.isel(time=i[0]).time.values.astype('datetime64[D]'))
-    ax.coastlines(resolution='110m', color='black', linewidth=1) 
-    ax.add_feature(cfeature.LAND, facecolor='w');
-    events_contour.isel(time=i[0]).plot.contour(levels=[34,35], transform=ccrs.PlateCarree(), colors='b', linewidths=4, add_colorbar=False, add_labels=False)
+    events_contour.isel(time=i[0]).plot.contour(levels=[34,35], colors='b', linewidths=4, add_colorbar=False, add_labels=False)
