@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+### APPLYING OCETRAC TO CESM2 CHILD DATASET
+##### LOADING IN PACKAGES
+import s3fs; import xarray as xr; import numpy as np
+import pandas as pd; import dask.array as da; import ocetrac
+
+import matplotlib.pyplot as plt; import cartopy.crs as ccrs
+
+import warnings; import expectexception
+warnings.filterwarnings('ignore')
+
+import netCDF4 as nc; import datetime as dt
+import scipy
+
+##### LOADING IN FILE
+ncfile = '/Users/cassiacai/Desktop/b.e21.BHISTcmip6.f09_g17.LE2-1001.001.pop.h.TEMP.198001-198912.nc' #an aggregate of child datasets 1850 to 2014
+ds = xr.open_mfdataset(ncfile,parallel=True)
+print(ds.TEMP)
+
+temp = ds.TEMP
+temp.load()
+
+# ---------------- info start -----------------
+# TEMP has coordinates = "TLONG TLAT z_t time"
+# z_t = "depth from surface to midpoint of layer", centimeters, positive down
+# ULONG = "array of u-grid longitudes", degrees east
+# ULAT = "array of u-grid longitudes", degrees north
+# TLONG = "array of t-grid longitudes", degrees east 
+# TLAT = "array of t-grid longitudes", degrees north
+# ---------------- info end ------------------
+print(ds.z_t[0]) #is 500cm = 5m 
