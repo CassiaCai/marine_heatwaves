@@ -81,7 +81,7 @@ t_rcp_ts_df = t_rcp_ts.to_series().unstack().T
 t_rcp_ts_df.head()
 
 # ---------------------------------------------
-# Notes: use cell_area to regrid all of the
+# TASKS: use cell_area to regrid all of the
 # CESMLE SST files so that it is on a normal 
 # grid. Then, run Ocetrac on a that new gridded
 # data.
