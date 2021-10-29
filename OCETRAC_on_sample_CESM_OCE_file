@@ -48,6 +48,6 @@ print(f"20th Century: {format_bytes(ds_20C.nbytes)}\n"
       f"RCP8.5: {format_bytes(ds_RCP85.nbytes)}")
 
 # Extract the Reference Height Temperature data variable
-t_20c = ds_20C.TEMP.isel(member_id=0,z_t=0) #looking at one ensemble member (the first one)
-t_rcp = ds_RCP85.TEMP.isel(member_id=0,z_t=0)
+t_20c = ds_20C.TEMP.isel(member_id=0) #looking at one ensemble member (the first one)
+t_rcp = ds_RCP85.TEMP.isel(member_id=0)
 t_20c
