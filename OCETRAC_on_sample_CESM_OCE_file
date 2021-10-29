@@ -1,32 +1,53 @@
 #!/usr/bin/env python
 
-### APPLYING OCETRAC TO CESM2 CHILD DATASET
-##### LOADING IN PACKAGES
-import s3fs; import xarray as xr; import numpy as np
-import pandas as pd; import dask.array as da; import ocetrac
+# https://gallery.pangeo.io/repos/NCAR/cesm-lens-aws/notebooks/EnhancedIntakeCatalogDemo.html
 
-import matplotlib.pyplot as plt; import cartopy.crs as ccrs
+##### Set up environment
+# Done on test-env where intake-esm was installed via: 
+#   conda create -n test-env -c conda-forge dask distributed ipython netcdf4 xarray intake-esm 
+#   conda activate test-env
 
-import warnings; import expectexception
-warnings.filterwarnings('ignore')
+import intake
+import pandas as pd
+import pprint
+# Not used here:
+###import numpy as np
+###import xarray as xr
+# Allow multiple lines per cell to be displayed without print (default is just last line)
+from IPython.core.interactiveshell import InteractiveShell
+InteractiveShell.ast_node_interactivity = "all"
+# Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
+from IPython.display import HTML
 
-import netCDF4 as nc; import datetime as dt
-import scipy
+##### Inspect original intake-esm catalog
+# Open original collection description file
+cat_url_orig = 'https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json'
+coll_orig = intake.open_esm_datastore(cat_url_orig)
 
-##### LOADING IN FILE
-ncfile = '/Users/cassiacai/Desktop/b.e21.BHISTcmip6.f09_g17.LE2-1001.001.pop.h.TEMP.198001-198912.nc' #an aggregate of child datasets 1850 to 2014
-ds = xr.open_mfdataset(ncfile,parallel=True)
-print(ds.TEMP)
+col_subset = coll_orig.search(frequency=["monthly"], component="ocn", variable="TEMP",
+                        experiment=["20C", "RCP85"])
+col_subset
+col_subset.df
 
-temp = ds.TEMP
-temp.load()
+# Help from https://github.com/intake/intake-esm/issues/148
+# Load catalog entries for subset into a dictionary of xarray datasets
+dsets = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
+print(f"\nDataset dictionary keys:\n {dsets.keys()}")
 
-# ---------------- info start -----------------
-# TEMP has coordinates = "TLONG TLAT z_t time"
-# z_t = "depth from surface to midpoint of layer", centimeters, positive down
-# ULONG = "array of u-grid longitudes", degrees east
-# ULAT = "array of u-grid longitudes", degrees north
-# TLONG = "array of t-grid longitudes", degrees east 
-# TLAT = "array of t-grid longitudes", degrees north
-# ---------------- info end ------------------
-print(ds.z_t[0]) #is 500cm = 5m 
+print(dsets)
+
+# Define Xarray datasets corresponding to the three experiments
+ds_20C = dsets['ocn.20C.monthly']
+ds_RCP85 = dsets['ocn.RCP85.monthly']
+
+# https://gallery.pangeo.io/repos/NCAR/cesm-lens-aws/notebooks/kay-et-al-2015.v3.html
+
+##### Use Dask.Distributed utility function to display size of each dataset
+from distributed.utils import format_bytes
+print(f"20th Century: {format_bytes(ds_20C.nbytes)}\n"
+      f"RCP8.5: {format_bytes(ds_RCP85.nbytes)}")
+
+# Extract the Reference Height Temperature data variable
+t_20c = ds_20C.TEMP.isel(member_id=0,z_t=0) #looking at one ensemble member (the first one)
+t_rcp = ds_RCP85.TEMP.isel(member_id=0,z_t=0)
+t_20c
