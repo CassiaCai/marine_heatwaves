@@ -24,7 +24,7 @@ from IPython.display import HTML
 cat_url_orig = 'https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json'
 coll_orig = intake.open_esm_datastore(cat_url_orig)
 
-col_subset = coll_orig.search(frequency=["monthly"], component="ocn", variable="TEMP",
+col_subset = coll_orig.search(frequency=["monthly"], component="ocn", variable="SST",
                         experiment=["20C", "RCP85"])
 col_subset
 col_subset.df
