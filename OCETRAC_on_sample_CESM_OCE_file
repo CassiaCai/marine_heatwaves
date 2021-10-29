@@ -47,7 +47,42 @@ from distributed.utils import format_bytes
 print(f"20th Century: {format_bytes(ds_20C.nbytes)}\n"
       f"RCP8.5: {format_bytes(ds_RCP85.nbytes)}")
 
-# Extract the Reference Height Temperature data variable
-t_20c = ds_20C.TEMP.isel(member_id=0) #looking at one ensemble member (the first one)
-t_rcp = ds_RCP85.TEMP.isel(member_id=0)
+t_20c = ds_20C.SST
+t_rcp = ds_RCP85.SST
 t_20c
+
+# The global surface temperature anomaly was computed relative to the 1961-90 base period
+# in the Kay et al. paper, so extract that time slice #what should mine be? 
+t_ref = t_20c.sel(time=slice("1961", "1990"))                          # ---------------- replace with Hillary's "DECOMPOSE OISST" code for anomalies
+
+catalog_url = 'https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json'
+col = intake.open_esm_datastore(catalog_url)
+col
+
+cat = col.search(frequency="static", component="atm", experiment=["20C"])
+_, grid = cat.to_dataset_dict(aggregate=False, zarr_kwargs={"consolidated": True}, storage_options={"anon": True}).popitem()
+grid
+
+cell_area = grid.area.load()
+total_area = cell_area.sum()
+cell_area
+
+##### Define weighted means
+t_20c_ts = ((t_20c.resample(time="AS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area
+t_rcp_ts = ((t_rcp.resample(time="AS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area
+print(t_rcp_ts)
+
+%%time
+t_20c_ts_df = t_20c_ts.to_series().unstack().T
+t_20c_ts_df.head()
+
+%%time
+t_rcp_ts_df = t_rcp_ts.to_series().unstack().T
+t_rcp_ts_df.head()
+
+# ---------------------------------------------
+# Notes: use cell_area to regrid all of the
+# CESMLE SST files so that it is on a normal 
+# grid. Then, run Ocetrac on a that new gridded
+# data.
+# ---------------------------------------------
