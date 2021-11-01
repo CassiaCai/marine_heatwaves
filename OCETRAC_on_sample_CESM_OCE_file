@@ -73,17 +73,34 @@ t_20c_ts = ((t_20c.resample(time="AS").mean("time") * cell_area).sum(dim=("lat",
 t_rcp_ts = ((t_rcp.resample(time="AS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area #ANNUAL
 print(t_rcp_ts)
 
-%%time
-t_20c_ts_df = t_20c_ts.to_series().unstack().T
-t_20c_ts_df.head()
+print(t_20c.shape)
+t_20c_ts = ((t_20c.resample(time="MS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area #MONTHLY
+t_rcp_ts = ((t_rcp.resample(time="MS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area
+print(t_20c_ts.shape); print(t_rcp_ts.shape)
+
+t_20c_ts_new = t_20c_ts.isel(z_t=0)
+t_rcp_ts_new = t_rcp_ts.isel(z_t=0)
+print(t_20c_ts_new.shape); print(t_rcp_ts_new.shape)
+
+ens1_20c = t_20c_ts_new[0,:1,:,:]
+ens1_rcp = t_rcp_ts_new[0,:1,:,:]
+print(ens1_20c.shape); print(ens1_rcp.shape)
 
 %%time
-t_rcp_ts_df = t_rcp_ts.to_series().unstack().T
-t_rcp_ts_df.head()
+ens1_20c_df = ens1_20c.to_series().unstack().T
+ens1_20c_df.head()
+
+# %%time
+# t_20c_ts_df = t_20c_ts.to_series().unstack().T
+# t_20c_ts_df.head()
+
+# %%time
+# t_rcp_ts_df = t_rcp_ts.to_series().unstack().T
+# t_rcp_ts_df.head()
 
 # ---------------------------------------------
 # TASKS: use cell_area to regrid all of the
 # CESMLE SST files so that it is on a normal 
 # grid. Then, run Ocetrac on a that new gridded
-# data.
+# data. Load the files.
 # ---------------------------------------------
