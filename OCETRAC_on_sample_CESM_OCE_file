@@ -68,6 +68,7 @@ total_area = cell_area.sum()
 cell_area
 
 ##### Define weighted means
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
 t_20c_ts = ((t_20c.resample(time="AS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area
 t_rcp_ts = ((t_rcp.resample(time="AS").mean("time") * cell_area).sum(dim=("lat", "lon"))) / total_area
 print(t_rcp_ts)
