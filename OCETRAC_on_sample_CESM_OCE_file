@@ -87,7 +87,7 @@ ens1_rcp = t_rcp_ts_new[0,:1,:,:]
 print(ens1_20c.shape); print(ens1_rcp.shape)
 
 %%time
-ens1_20c_df = ens1_20c.to_series().unstack().T #takes forever to run on my laptop
+ens1_20c_df = ens1_20c.to_series().unstack().T #takes a long time to run on my laptop
 ens1_20c_df.head()
 
 # %%time
