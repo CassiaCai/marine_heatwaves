@@ -35,7 +35,7 @@ col_subset = coll_orig.search(frequency=["monthly"], component="lnd", variable='
 dsets_land = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
 print(f"\nDataset dictionary keys:\n {dsets.keys()}")
 
-land_20C = dsets['lnd.CTRL.monthly'].SOILWATER_10CM
+land_20C = dsets_land['lnd.CTRL.monthly'].SOILWATER_10CM
 
 print(type(land_20C[0,0,:,:]))
 print(land_20C[0,0,:,:])
@@ -81,3 +81,37 @@ print(SST)
 SST.load()
 SST.shape
 
+### Decompose SST maps into mean, trend, annual, and semi-annual harmonics
+## Use least-squares regression and solve for model coefficients
+dyr = SST.time.dt.year + (SST.time.dt.month-0.5)/12
+
+# Our 6 coefficient model is composed of the mean, trend, annual sine and cosine harmonics, & semi-annual sine and cosine harmonics
+model = np.array([np.ones(len(dyr))] + [dyr-np.mean(dyr)] + [np.sin(2*np.pi*dyr)] + [np.cos(2*np.pi*dyr)] + [np.sin(4*np.pi*dyr)] + [np.cos(4*np.pi*dyr)])
+
+# Take the pseudo-inverse of model to 'solve' least-squares problem
+pmodel = np.linalg.pinv(model)
+
+# Convert model and pmodel to xaray DataArray
+model_da = xr.DataArray(model.T, dims=['time','coeff'], coords={'time':SST.time.values, 'coeff':np.arange(1,7,1)}) 
+pmodel_da = xr.DataArray(pmodel.T, dims=['coeff','time'], coords={'coeff':np.arange(1,7,1), 'time':SST.time.values})
+
+pmodel_da.shape
+
+# resulting coefficients of the model
+sst_mod = xr.DataArray(pmodel_da.dot(SST), dims=['coeff','lon','lat'], coords={'coeff':np.arange(1,7,1), 'lon':SST.lon.values, 'lat':SST.lat.values})
+
+# Construct mean, trend, and seasonal cycle
+mean = model_da[:,0].dot(sst_mod[0,:,:])
+trend = model_da[:,1].dot(sst_mod[1,:,:])
+seas = model_da[:,2:].dot(sst_mod[2:,:,:])
+
+# compute anomalies by removing all  the model coefficients 
+ssta_notrend = SST-model_da.dot(sst_mod) #this is anomalies
+
+transp_ssta_notrend = ssta_notrend.transpose()
+transp_mean = mean.transpose()
+transp_trend = trend.transpose()
+transp_seas = seas.transpose()
+
+dif_try = trend[7,:,:]-trend[0,:,:]
+dif_try.transpose().plot(cmap='seismic')
