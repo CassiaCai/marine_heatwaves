@@ -14,24 +14,70 @@ warnings.filterwarnings('ignore')
 import netCDF4 as nc; import datetime as dt
 import scipy
 
-#[markdown] https://ncar.github.io/esds/posts/2021/intake-cesm2-le-glade-example/
-#[markdown] https://gallery.pangeo.io/repos/NCAR/cesm-lens-aws/notebooks/kay-et-al-2015.v3.html
-
 import intake
-from distributed import Client
-from ncar_jobqueue import NCARCluster
+import pprint
+# Not used here:
+###import numpy as np
+###import xarray as xr
+# Allow multiple lines per cell to be displayed without print (default is just last line)
+from IPython.core.interactiveshell import InteractiveShell
+InteractiveShell.ast_node_interactivity = "all"
+# Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
+from IPython.display import HTML
 
-# Create our NCAR Cluster - which uses PBSCluster under the hood
-cluster = NCARCluster()
+# Open original collection description file
+cat_url_orig = 'https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json'
+coll_orig = intake.open_esm_datastore(cat_url_orig)
 
-# Spin up 20 workers
-cluster.scale(20)
+# Making land mask from a land file
+df = coll_orig.search(component='lnd',frequency='daily').df
+col_subset = coll_orig.search(frequency=["monthly"], component="lnd", variable='SOILWATER_10CM')
+dsets_land = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
+print(f"\nDataset dictionary keys:\n {dsets.keys()}")
 
-# Assign the cluster to our Client
-client = Client(cluster)
+land_20C = dsets['lnd.CTRL.monthly'].SOILWATER_10CM
 
-client
+print(type(land_20C[0,0,:,:]))
+print(land_20C[0,0,:,:])
 
-cat = intake.open_esm_datastore(
-    '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json')
+full_mask_land = land_20C[0,0,:,:]
+full_masked = full_mask_land.where(full_mask_land != np.nan)
+
+afterlandmask=np.isfinite(full_masked)
+afterlandmask.plot()
+
+# Loading in atmospheric data
+df = coll_orig.search(component='atm', frequency = 'monthly', experiment = '20C',variable='T').df
+HTML(df.to_html(index=False))
+
+col_subset = coll_orig.search(frequency=["monthly"], component="atm", variable='T')
+col_subset.df
+# Load catalog entries for subset into a dictionary of xarray datasets
+dsets = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
+print(f"\nDataset dictionary keys:\n {dsets.keys()}")
+
+print(dsets)
+
+# Define Xarray datasets corresponding to the three experiments
+ds_20C = dsets['atm.20C.monthly']
+ds_RCP85 = dsets['atm.RCP85.monthly']
+
+# Use Dask.Distributed utility function to display size of each dataset
+from distributed.utils import format_bytes
+print(f"20th Century: {format_bytes(ds_20C.nbytes)}\n"
+      f"RCP8.5: {format_bytes(ds_RCP85.nbytes)}")
+
+t_20c = ds_20C.T
+t_rcp = ds_RCP85.T
+t_20c
+
+t_20c_new = t_20c.isel(lev=29)[:,:,:,:]
+t_rcp_new = t_rcp.isel(lev=29)[:,:,:,:]
+
+SST = t_20c_new.T[:,:,:,0]
+
+print(SST)
+
+SST.load()
+SST.shape
 
