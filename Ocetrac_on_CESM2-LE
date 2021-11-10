@@ -40,69 +40,19 @@ subset.df #2489 rows
 subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id= 'r1i1001p1f1')
 subset.df #looking at one ensemble member
 
-
-
-
-
-
-
-
-
-
----------------------------------------------------------------------------------------------------------------- review everything below this point
-# Making land mask from a land file
-df = coll_orig.search(component='lnd',frequency='daily').df
-col_subset = coll_orig.search(frequency=["monthly"], component="lnd", variable='SOILWATER_10CM')
-dsets_land = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
-print(f"\nDataset dictionary keys:\n {dsets.keys()}")
-
-land_20C = dsets_land['lnd.CTRL.monthly'].SOILWATER_10CM
-
-print(type(land_20C[0,0,:,:]))
-print(land_20C[0,0,:,:])
-
-full_mask_land = land_20C[0,0,:,:]
-full_masked = full_mask_land.where(full_mask_land != np.nan)
-
-afterlandmask=np.isfinite(full_masked)
-afterlandmask.plot()
-
-# Loading in atmospheric data
-df = coll_orig.search(component='atm', frequency = 'monthly', experiment = '20C',variable='T').df
-HTML(df.to_html(index=False))
-
-col_subset = coll_orig.search(frequency=["monthly"], component="atm", variable='T')
-col_subset.df
 # Load catalog entries for subset into a dictionary of xarray datasets
-dsets = col_subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
+dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
 print(f"\nDataset dictionary keys:\n {dsets.keys()}")
 
 print(dsets)
 
-# Define Xarray datasets corresponding to the three experiments
-ds_20C = dsets['atm.20C.monthly']
-ds_RCP85 = dsets['atm.RCP85.monthly']
-
-# Use Dask.Distributed utility function to display size of each dataset
-from distributed.utils import format_bytes
-print(f"20th Century: {format_bytes(ds_20C.nbytes)}\n"
-      f"RCP8.5: {format_bytes(ds_RCP85.nbytes)}")
-
-t_20c = ds_20C.T
-t_rcp = ds_RCP85.T
-t_20c
-
-t_20c_new = t_20c.isel(lev=29)[:,:,:,:]
-t_rcp_new = t_rcp.isel(lev=29)[:,:,:,:]
-
-SST = t_20c_new.T[:,:,:,0]
-
+ds = dsets['atm.historical.cam.h0.cmip6.SST']
+SST = ds.SST
 print(SST)
-
 SST.load()
-SST.shape
+SST.shape()
 
-### Decompose SST maps into mean, trend, annual, and semi-annual harmonics
+### Decompose SST maps into mean, trend, annual, and semi-annual harmonics -------------
 ## Use least-squares regression and solve for model coefficients
 dyr = SST.time.dt.year + (SST.time.dt.month-0.5)/12
 
@@ -115,11 +65,10 @@ pmodel = np.linalg.pinv(model)
 # Convert model and pmodel to xaray DataArray
 model_da = xr.DataArray(model.T, dims=['time','coeff'], coords={'time':SST.time.values, 'coeff':np.arange(1,7,1)}) 
 pmodel_da = xr.DataArray(pmodel.T, dims=['coeff','time'], coords={'coeff':np.arange(1,7,1), 'time':SST.time.values})
-
 pmodel_da.shape
 
 # resulting coefficients of the model
-sst_mod = xr.DataArray(pmodel_da.dot(SST), dims=['coeff','lon','lat'], coords={'coeff':np.arange(1,7,1), 'lon':SST.lon.values, 'lat':SST.lat.values})
+sst_mod = xr.DataArray(pmodel_da.dot(SST), dims=['coeff','lat','lon'], coords={'coeff':np.arange(1,7,1), 'lat':SST.lat.values, 'lon':SST.lon.values})
 
 # Construct mean, trend, and seasonal cycle
 mean = model_da[:,0].dot(sst_mod[0,:,:])
@@ -129,10 +78,82 @@ seas = model_da[:,2:].dot(sst_mod[2:,:,:])
 # compute anomalies by removing all  the model coefficients 
 ssta_notrend = SST-model_da.dot(sst_mod) #this is anomalies
 
-transp_ssta_notrend = ssta_notrend.transpose()
-transp_mean = mean.transpose()
-transp_trend = trend.transpose()
-transp_seas = seas.transpose()
-
+# Some plotting and checking
 dif_try = trend[7,:,:]-trend[0,:,:]
-dif_try.transpose().plot(cmap='seismic')
+dif_try.plot(cmap='seismic')
+
+mean[0,:,:].plot(levels=[262.5,265,267.2,270,272.5,275,277.5,280,282.5,285,287.5,290,292.5,295,297.5,300,302.5,305,307.5],cmap='Reds')
+
+# location of time series
+lon=seas.lon[170]
+print(lon)
+lat=seas.lat[145]
+print(lat)
+
+point_seas = seas.loc[dict(lon=lon, lat=lat)]
+point_mean = mean.loc[dict(lon=lon, lat=lat)]
+point_trend = trend.loc[dict(lon=lon, lat=lat)]
+point_variability = ssta_notrend.loc[dict(lon=lon, lat=lat)]
+
+datetimeindex = point_mean.indexes['time'].to_datetimeindex()
+point_seas['time'] = datetimeindex
+point_mean['time'] = datetimeindex
+point_trend['time'] = datetimeindex
+point_variability['time'] = datetimeindex
+
+point_seas.sel(time=slice('1850-02-01','1899-02-01')).plot()
+
+detrended = ssta_notrend
+
+###### THRESHOLD and FEATURES
+if detrended.chunks:
+    detrended = detrended.chunk({'time': -1})
+    print(detrended)
+      
+threshold = detrended.groupby('time.month').quantile(0.9,dim=('time')) 
+features_ssta = detrended.where(detrended.groupby('time.month')>=threshold, other=np.nan)
+
+print(threshold.shape)
+print(features_ssta.shape)
+
+%%time
+features_ssta= features_ssta[:,:,:].load()
+
+##### EXAMPLE PLOTS
+month_choice = 1
+timed = 190
+print(np.nanmin(features_ssta.isel(time=timed)))
+print(np.nanmax(features_ssta.isel(time=timed)))
+print(np.nanmean(features_ssta.isel(time=timed)))
+
+plt.hist(features_ssta.isel(time=0))
+
+inKel = features_ssta[timed,:,:]
+inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+plt.show()
+
+##### MASKING
+full_mask_land = features_ssta
+full_masked = full_mask_land.where(full_mask_land != 0)
+print(full_masked.shape)
+
+full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds') # trying this
+
+binary_out_afterlandmask=np.isfinite(full_masked)
+print(binary_out_afterlandmask.shape)
+
+binary_out_afterlandmask[timed,:,:].plot()
+
+newmask = np.isfinite(ds.SST.isel(member_id=0)) #------------------------------------------------------------------------- Not really what I'm looking for...
+newmask.shape
+
+print(newmask.shape)
+print(binary_out_afterlandmask[:,:,:].shape)
+
+newmask.lat.shape
+binary_out_afterlandmask.lat.shape
+
+%%time
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmask[0,:,:], radius=2, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+blobs = Tracker.track()
