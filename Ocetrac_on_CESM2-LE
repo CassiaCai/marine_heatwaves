@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-##### LOADING IN PACKAGES
+##### LOADING IN PACKAGES #--------------------------------------------------------------
 import s3fs; import xarray as xr; import numpy as np
 import pandas as pd; 
 import dask.array as da
@@ -14,21 +14,42 @@ warnings.filterwarnings('ignore')
 import netCDF4 as nc; import datetime as dt
 import scipy
 
-import intake
-import pprint
-# Not used here:
-###import numpy as np
-###import xarray as xr
+import intake; import pprint
 # Allow multiple lines per cell to be displayed without print (default is just last line)
 from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
 # Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
 from IPython.display import HTML
 
-# Open original collection description file
-cat_url_orig = 'https://ncar-cesm-lens.s3-us-west-2.amazonaws.com/catalogs/aws-cesm1-le.json'
-coll_orig = intake.open_esm_datastore(cat_url_orig)
+##### DOMAIN FILE (FOR LAND MASK) #-------------------------------------------------------
+fname = '/glade/p/cesm/cseg/inputdata/share/domains/domain.lnd.fv0.9x1.25_gx1v7.151020.nc'
+DS=xr.open_dataset(fname)
 
+frac = DS.frac
+# DS.frac.plot()
+ocn = frac.where(frac == 0.)
+afterlandmask=np.isfinite(ocn)
+afterlandmask.plot()
+
+# Open original collection description file #----------------------------------------------
+cat_url_orig = '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json'
+coll_orig = intake.open_esm_datastore(cat_url_orig)
+subset = coll_orig.search(component='atm',variable='SST',frequency='month_1')
+subset.df #2489 rows
+
+subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id= 'r1i1001p1f1')
+subset.df #looking at one ensemble member
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------- review everything below this point
 # Making land mask from a land file
 df = coll_orig.search(component='lnd',frequency='daily').df
 col_subset = coll_orig.search(frequency=["monthly"], component="lnd", variable='SOILWATER_10CM')
