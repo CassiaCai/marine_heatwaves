@@ -157,3 +157,80 @@ binary_out_afterlandmask.lat.shape
 %%time
 Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmask[0,:,:], radius=2, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
 blobs = Tracker.track()
+
+blobs.attrs
+
+from matplotlib.colors import ListedColormap
+maxl = int(np.nanmax(blobs.values))
+cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
+blobs.isel(time=timed).plot(cmap= cm)
+
+full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
+
+from matplotlib.colors import ListedColormap
+maxl = int(np.nanmax(blobs.values))
+cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
+
+# full_mask_land = full_mask_land.where(full_mask_land != np.nan)
+
+timed = 1
+plt.figure(figsize=(16,3))
+ax1 = plt.subplot(121)
+blobs.isel(time=timed).plot(cmap= cm)
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
+
+ax2 = plt.subplot(122); 
+full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
+from matplotlib.colors import ListedColormap
+maxl = int(np.nanmax(blobs.values))
+cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
+
+timed = 1
+plt.figure(figsize=(16,3))
+ax1 = plt.subplot(121)
+blobs.isel(time=timed).plot(cmap= cm)
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
+
+ax2 = plt.subplot(122); 
+full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
+
+mo = Tracker._morphological_operations()
+mo.isel(time=23).plot()
+print(mo.shape)
+
+datetimeindex_blobs = blobs.indexes['time'].to_datetimeindex()
+print(datetimeindex_blobs)
+
+blobs['time'] = datetimeindex_blobs
+blobs.sel(time=slice('02-01-1850', '06-01-1850')).plot(col='time', col_wrap=4)
+
+id = 1
+event = blobs.where(blobs==id, drop=True)
+event.shape
+print(event)
+
+print(type(ds))
+print(type(event))
+
+datetimeindex_event = event.indexes['time']
+print(datetimeindex_event)
+print(ds.time)
+
+datetimeindex_ds_init = ds.indexes['time'].to_datetimeindex()
+print(datetimeindex_ds_init)
+ds['time'] = datetimeindex_ds_init
+
+datetimeindex_detrended = detrended.indexes['time'].to_datetimeindex()
+print(datetimeindex_detrended)
+detrended['time'] = datetimeindex_detrended
+
+print(event.sel(time=slice('01-01-2014', '04-01-2014')))
+
+event_intensity = detrended.where((ds.time==event.time), drop=True).load()
+print(event_intensity.shape)
