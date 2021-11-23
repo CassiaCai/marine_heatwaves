@@ -31,14 +31,14 @@ ocn = frac.where(frac == 0.)
 afterlandmask=np.isfinite(ocn)
 afterlandmask.plot()
 
-# Open original collection description file #----------------------------------------------
+# OPEN FILES #---------------------------------------------------------------------------
 cat_url_orig = '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json'
 coll_orig = intake.open_esm_datastore(cat_url_orig)
 subset = coll_orig.search(component='atm',variable='SST',frequency='month_1')
-subset.df #2489 rows
+subset.df
 
 subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id= 'r1i1001p1f1')
-subset.df #looking at one ensemble member
+subset.df 
 
 # Load catalog entries for subset into a dictionary of xarray datasets
 dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
@@ -52,7 +52,8 @@ print(SST)
 SST.load()
 SST.shape()
 
-### Decompose SST maps into mean, trend, annual, and semi-annual harmonics -------------
+# DETRNEDING #---------------------------------------------------------------------------
+### Decompose SST maps into mean, trend, annual, and semi-annual harmonics 
 ## Use least-squares regression and solve for model coefficients
 dyr = SST.time.dt.year + (SST.time.dt.month-0.5)/12
 
