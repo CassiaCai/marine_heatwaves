@@ -1,58 +1,31 @@
 #!/usr/bin/env python
 
 ##### LOADING IN PACKAGES #--------------------------------------------------------------
-import s3fs; import xarray as xr; import numpy as np
-import pandas as pd; 
-import dask.array as da
-import ocetrac
-
-import matplotlib.pyplot as plt; import cartopy.crs as ccrs
-
+import s3fs; import xarray as xr; import numpy as np; import pandas as pd; 
+import dask.array as da; import ocetrac; import matplotlib.pyplot as plt; import cartopy.crs as ccrs
 import warnings; import expectexception
 warnings.filterwarnings('ignore')
-
-import netCDF4 as nc; import datetime as dt
-import scipy
-
-import intake; import pprint
+import netCDF4 as nc; import datetime as dt; import scipy; import intake; import pprint
 # Allow multiple lines per cell to be displayed without print (default is just last line)
 from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
 # Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
 from IPython.display import HTML
 
-##### DOMAIN FILE (FOR LAND MASK) #-------------------------------------------------------
-fname = '/glade/p/cesm/cseg/inputdata/share/domains/domain.lnd.fv0.9x1.25_gx1v7.151020.nc'
-DS=xr.open_dataset(fname)
-
-frac = DS.frac
-# DS.frac.plot()
-ocn = frac.where(frac == 0.)
-afterlandmask=np.isfinite(ocn)
-afterlandmask.plot()
-
 # OPEN FILES #---------------------------------------------------------------------------
 cat_url_orig = '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json'
 coll_orig = intake.open_esm_datastore(cat_url_orig)
-subset = coll_orig.search(component='atm',variable='SST',frequency='month_1')
-subset.df
-
-subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id= 'r1i1001p1f1')
+subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id= 'r1i1001p1f1') #here I picked one member
 subset.df 
 
 # Load catalog entries for subset into a dictionary of xarray datasets
 dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
 print(f"\nDataset dictionary keys:\n {dsets.keys()}")
 
-print(dsets)
-
 ds = dsets['atm.historical.cam.h0.cmip6.SST']
-SST = ds.SST
-print(SST)
-SST.load()
-SST.shape()
+SST = ds.SST; SST.load()
 
-# DETRNEDING #---------------------------------------------------------------------------
+# DETRENDING #---------------------------------------------------------------------------
 ### Decompose SST maps into mean, trend, annual, and semi-annual harmonics 
 ## Use least-squares regression and solve for model coefficients
 dyr = SST.time.dt.year + (SST.time.dt.month-0.5)/12
@@ -66,7 +39,6 @@ pmodel = np.linalg.pinv(model)
 # Convert model and pmodel to xaray DataArray
 model_da = xr.DataArray(model.T, dims=['time','coeff'], coords={'time':SST.time.values, 'coeff':np.arange(1,7,1)}) 
 pmodel_da = xr.DataArray(pmodel.T, dims=['coeff','time'], coords={'coeff':np.arange(1,7,1), 'time':SST.time.values})
-pmodel_da.shape
 
 # resulting coefficients of the model
 sst_mod = xr.DataArray(pmodel_da.dot(SST), dims=['coeff','lat','lon'], coords={'coeff':np.arange(1,7,1), 'lat':SST.lat.values, 'lon':SST.lon.values})
@@ -79,84 +51,29 @@ seas = model_da[:,2:].dot(sst_mod[2:,:,:])
 # compute anomalies by removing all  the model coefficients 
 ssta_notrend = SST-model_da.dot(sst_mod) #this is anomalies
 
-# Some plotting and checking
-dif_try = trend[7,:,:]-trend[0,:,:]
-dif_try.plot(cmap='seismic')
-
-mean[0,:,:].plot(levels=[262.5,265,267.2,270,272.5,275,277.5,280,282.5,285,287.5,290,292.5,295,297.5,300,302.5,305,307.5],cmap='Reds')
-
-# location of time series
-lon=seas.lon[170]
-print(lon)
-lat=seas.lat[145]
-print(lat)
-
-point_seas = seas.loc[dict(lon=lon, lat=lat)]
-point_mean = mean.loc[dict(lon=lon, lat=lat)]
-point_trend = trend.loc[dict(lon=lon, lat=lat)]
-point_variability = ssta_notrend.loc[dict(lon=lon, lat=lat)]
-
-datetimeindex = point_mean.indexes['time'].to_datetimeindex()
-point_seas['time'] = datetimeindex
-point_mean['time'] = datetimeindex
-point_trend['time'] = datetimeindex
-point_variability['time'] = datetimeindex
-
-point_seas.sel(time=slice('1850-02-01','1899-02-01')).plot()
-
 detrended = ssta_notrend
 
 ###### THRESHOLD and FEATURES
 if detrended.chunks:
     detrended = detrended.chunk({'time': -1})
-    print(detrended)
       
 threshold = detrended.groupby('time.month').quantile(0.9,dim=('time')) 
 features_ssta = detrended.where(detrended.groupby('time.month')>=threshold, other=np.nan)
 
-print(threshold.shape)
-print(features_ssta.shape)
-
 %%time
 features_ssta= features_ssta[:,:,:].load()
-
-##### EXAMPLE PLOTS
-month_choice = 1
-timed = 190
-print(np.nanmin(features_ssta.isel(time=timed)))
-print(np.nanmax(features_ssta.isel(time=timed)))
-print(np.nanmean(features_ssta.isel(time=timed)))
-
-plt.hist(features_ssta.isel(time=0))
-
-inKel = features_ssta[timed,:,:]
-inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
-features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-plt.show()
 
 ##### MASKING
 full_mask_land = features_ssta
 full_masked = full_mask_land.where(full_mask_land != 0)
-print(full_masked.shape)
-
-full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds') # trying this
-
 binary_out_afterlandmask=np.isfinite(full_masked)
-print(binary_out_afterlandmask.shape)
 
 binary_out_afterlandmask[timed,:,:].plot()
-
-newmask = np.isfinite(ds.SST.isel(member_id=0)) #------------------------------------------------------------------------- Not really what I'm looking for...
-newmask.shape
-
-print(newmask.shape)
-print(binary_out_afterlandmask[:,:,:].shape)
-
-newmask.lat.shape
-binary_out_afterlandmask.lat.shape
+newmask_1 = ds.SST.isel(member_id=0)
+newmask = newmask_1.where(newmask_1 != 0)
 
 %%time
-Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmask[0,:,:], radius=2, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmasked[1850,:,:], radius=2, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
 blobs = Tracker.track()
 
 blobs.attrs
@@ -172,66 +89,22 @@ from matplotlib.colors import ListedColormap
 maxl = int(np.nanmax(blobs.values))
 cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
 
-# full_mask_land = full_mask_land.where(full_mask_land != np.nan)
-
-timed = 1
-plt.figure(figsize=(16,3))
-ax1 = plt.subplot(121)
-blobs.isel(time=timed).plot(cmap= cm)
-features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
-
-ax2 = plt.subplot(122); 
-full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
-features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
 from matplotlib.colors import ListedColormap
 maxl = int(np.nanmax(blobs.values))
 cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
 
-timed = 1
+timed = 1900
 plt.figure(figsize=(16,3))
 ax1 = plt.subplot(121)
 blobs.isel(time=timed).plot(cmap= cm)
 features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
 
 ax2 = plt.subplot(122); 
 full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds')
 features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
-# full_mask_land.where(full_mask_land != np.nan).plot.contourf(colors='k', add_colorbar=False)
 
 mo = Tracker._morphological_operations()
-mo.isel(time=23).plot()
-print(mo.shape)
 
-datetimeindex_blobs = blobs.indexes['time'].to_datetimeindex()
-print(datetimeindex_blobs)
-
-blobs['time'] = datetimeindex_blobs
-blobs.sel(time=slice('02-01-1850', '06-01-1850')).plot(col='time', col_wrap=4)
-
-id = 1
-event = blobs.where(blobs==id, drop=True)
-event.shape
-print(event)
-
-print(type(ds))
-print(type(event))
-
-datetimeindex_event = event.indexes['time']
-print(datetimeindex_event)
-print(ds.time)
-
-datetimeindex_ds_init = ds.indexes['time'].to_datetimeindex()
-print(datetimeindex_ds_init)
-ds['time'] = datetimeindex_ds_init
-
-datetimeindex_detrended = detrended.indexes['time'].to_datetimeindex()
-print(datetimeindex_detrended)
-detrended['time'] = datetimeindex_detrended
-
-print(event.sel(time=slice('01-01-2014', '04-01-2014')))
-
-event_intensity = detrended.where((ds.time==event.time), drop=True).load()
-print(event_intensity.shape)
+##### SAVING AS NETCDFS #--------------------------------------------------------------
+blobs.to_netcdf("blobs_sample.nc")
+detrended.to_netcdf("detrended_sample.nc")
