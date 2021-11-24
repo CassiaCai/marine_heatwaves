@@ -26,3 +26,8 @@ ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc")
 
 ds_blob
 ds_detrendedSSTA
+
+label = ds_blob.variables['labels'][:]
+ssta = ds_detrendedSSTA.variables['__xarray_dataarray_variable__'][:]
+blob.shape
+ssta.shape
