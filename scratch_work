@@ -1,0 +1,136 @@
+#!/usr/bin/env python 
+
+# location of time series (beneath line 52 in Ocetrac_on_CESM2-LE
+lon=seas.lon[170]
+print(lon)
+lat=seas.lat[145]
+print(lat)
+
+point_seas = seas.loc[dict(lon=lon, lat=lat)]
+point_mean = mean.loc[dict(lon=lon, lat=lat)]
+point_trend = trend.loc[dict(lon=lon, lat=lat)]
+point_variability = ssta_notrend.loc[dict(lon=lon, lat=lat)]
+
+datetimeindex = point_mean.indexes['time'].to_datetimeindex()
+point_seas['time'] = datetimeindex
+point_mean['time'] = datetimeindex
+point_trend['time'] = datetimeindex
+point_variability['time'] = datetimeindex
+
+point_seas.sel(time=slice('1850-02-01','1899-02-01')).plot()
+
+
+##### EXAMPLE PLOTS (beneath line 64 in Ocetrac_on_CESM2-LE)
+month_choice = 1
+timed = 190
+print(np.nanmin(features_ssta.isel(time=timed)))
+print(np.nanmax(features_ssta.isel(time=timed)))
+print(np.nanmean(features_ssta.isel(time=timed)))
+
+plt.hist(features_ssta.isel(time=0))
+
+inKel = features_ssta[timed,:,:]
+inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+plt.show()
+
+##### beneath line 65
+ssta_flist = []; time_list = []
+ssta_max_flist = []; ssta_min_flist = []
+for i in range(1980):
+    ssta_flist.append(np.nanmean(features_ssta.isel(time=i)))
+    ssta_max_flist.append(np.nanmax(features_ssta.isel(time=i)))
+    ssta_min_flist.append(np.nanmin(features_ssta.isel(time=i)))
+    time_list.append(i)
+
+x = time_list; y = ssta_flist
+m, b = np.polyfit(x, y, 1)
+mx = [i * m for i in x]
+
+plt.rcParams["figure.figsize"] = (10,5)
+plt.ylim(0,0.6); plt.xlim(0,2000)
+plt.scatter(x,y,s=5,c='orange')
+plt.plot(x, mx + b,c='red',linewidth=3)
+plt.xlabel('Timestep',fontsize=10)
+plt.ylabel('SSTA', fontsize=10)
+plt.plot()
+
+print('slope: ',m)
+print('intercept: ',b)
+
+plt.hist(features_ssta.isel(time=0))
+
+inKel = features_ssta[10,:,:]
+inKel.plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0],cmap='Reds')
+features_ssta.isel(time=timed).where(features_ssta.isel(time=timed)==0.0).plot.contourf(colors='k', add_colorbar=False)
+plt.show()
+
+##### beneath line 80
+full_masked[timed,:,:].plot(levels=[0.0,0.25,0.50,0.75,1.0,1.25,1.50,1.75,2.0,2.25,2.5],cmap='Reds') # trying this
+
+##### beneath line 69
+binary_out_afterlandmask[timed,:,:].plot()
+
+# newmask = np.nonzero(ds.SST.isel(member_id=0)) #------------------------------------------------------------------------- Not really what I'm looking for...
+# newmask = np.isfinite(ds.SST.isel(member_id=0)) #------------------------------------------------------------------------- Not really what I'm looking for...
+newmask_1 = ds.SST.isel(member_id=0)
+newmask = newmask_1.where(newmask_1 != 0)
+print(full_masked.shape)
+
+newmask.shape
+newmask[timed,:,:].plot()
+
+newmask[timed,:,:].plot()
+print(np.nanmean(newmask[timed,:,:]))
+print(np.nanmax(newmask[timed,:,:]))
+print(np.nanmin(newmask[timed,:,:]))
+
+newmask[0,:,:].plot()
+print(np.nanmean(newmask[0,:,:]))
+print(np.nanmax(newmask[0,:,:]))
+print(np.nanmin(newmask[0,:,:]))
+
+newmasked = np.isfinite(newmask)
+newmasked[0,:,:].plot()
+np.nanmean(newmasked[0,:,:])
+np.nanmean(newmasked[1850,:,:])
+
+##### Beneath line 79
+timed = 25
+from matplotlib.colors import ListedColormap
+maxl = int(np.nanmax(blobs.values))
+cm = ListedColormap(np.random.random(size=(maxl, 3)).tolist())
+blobs.isel(time=timed).plot(cmap= cm)
+
+##### Beneath line 110
+# ANALYSIS OF BLOBS
+datetimeindex_blobs = blobs.indexes['time'].to_datetimeindex()
+print(datetimeindex_blobs)
+
+blobs['time'] = datetimeindex_blobs
+blobs.sel(time=slice('02-01-1850', '06-01-1850')).plot(col='time', col_wrap=4)
+
+id = 1
+event = blobs.where(blobs==id, drop=True)
+event.shape
+print(event)
+
+print(type(ds))
+print(type(event))
+
+datetimeindex_event = event.indexes['time']
+print(datetimeindex_event)
+print(ds.time)
+
+datetimeindex_ds_init = ds.indexes['time'].to_datetimeindex()
+print(datetimeindex_ds_init)
+ds['time'] = datetimeindex_ds_init
+
+datetimeindex_detrended = detrended.indexes['time'].to_datetimeindex()
+print(datetimeindex_detrended)
+detrended['time'] = datetimeindex_detrended
+
+print(event.sel(time=slice('01-01-2014', '04-01-2014')))
+
+event_intensity = detrended.where((ds.time==event.time), drop=True).load()
+print(event_intensity.shape)
