@@ -108,3 +108,8 @@ mo = Tracker._morphological_operations()
 ##### SAVING AS NETCDFS #--------------------------------------------------------------
 blobs.to_netcdf("blobs_sample.nc")
 detrended.to_netcdf("detrended_sample.nc")
+
+# -------------------------------------------------------------------------------------------------------------------------
+# TO DO LIST
+# - Make this code work and output files as NetCDFs for each of the 100 ensemble members.
+# - This currently only works for one ensemble members at a time. 
