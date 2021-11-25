@@ -33,37 +33,23 @@ label.shape
 ssta.shape
 
 # Working code (mostly from Ocetrac github files)
-print(int(np.max(label)))
+duration = []; id_stored = []; date = []
+intensity_max = []; intensity_min = []; intensity_mean = []; intensity_cumulative = []
+coordinates = []
 
-id = 27
-event = label.where(label==id, drop=True)
-event.shape
-
-duration = [] # number of months
-duration.append(list(event.shape)[0])
-print(duration)
-
-id_stored = []
-id_stored.append(int(np.nanmedian(event.values)))
-print(id_stored)
-
-date = []
-date.append(event.time.values.astype('datetime64[M]'))
-print(date)
-
-event_ssta = ssta.where(event>0,drop=True)
-intensity_max = []; intensity_min = []; intensity_mean = []; intensity_cumulative = []; coordinates = []
-intensity_mean.append(event_ssta.mean(('lat','lon')).values)
-intensity_max.append(event_ssta.max(('lat','lon')).values)
-intensity_min.append(event_ssta.min(('lat','lon')).values)
-intensity_cumulative.append(np.nansum(event_ssta))
-
-coords = event.stack(z=('lat','lon'))
-coord_pairs = [(coords.isel(time=t[0]).dropna(dim='z', how='any').z.lat.values, 
+for i in range(1,int(np.max(label))):
+    event = label.where(label==id, drop=True)
+    
+    duration.append(list(event.shape)[0])
+    id_stored.append(int(np.nanmedian(event.values)))
+    date.append(event.time.values.astype('datetime64[M]'))
+    
+    event_ssta = ssta.where(event>0,drop=True)
+    intensity_mean.append(event_ssta.mean(('lat','lon')).values)
+    intensity_max.append(event_ssta.max(('lat','lon')).values)
+    intensity_min.append(event_ssta.min(('lat','lon')).values)
+    intensity_cumulative.append(np.nansum(event_ssta))
+    coords = event.stack(z=('lat','lon'))
+    coord_pairs = [(coords.isel(time=t[0]).dropna(dim='z', how='any').z.lat.values, 
                 coords.isel(time=t[0]).dropna(dim='z', how='any').z.lon.values) for t in enumerate(event.time)]
-coordinates.append(coord_pairs)   
-print(intensity_max)
-print(intensity_min)
-print(intensity_mean)
-print(intensity_cumulative)
-print(coords)
+    coordinates.append(coord_pairs)   
