@@ -32,7 +32,8 @@ ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
 label.shape
 ssta.shape
 
-# Working code (mostly from Ocetrac github files)
+# ------------- Working code (mostly from Ocetrac github files)
+# ------------- Note: loops are so slow. How can I optimize this?
 duration = []; id_stored = []; date = []
 intensity_max = []; intensity_min = []; intensity_mean = []; intensity_cumulative = []
 coordinates = []
