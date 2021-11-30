@@ -54,3 +54,16 @@ for i in range(1,int(np.max(label))):
     coord_pairs = [(coords.isel(time=t[0]).dropna(dim='z', how='any').z.lat.values, 
                 coords.isel(time=t[0]).dropna(dim='z', how='any').z.lon.values) for t in enumerate(event.time)]
     coordinates.append(coord_pairs)   
+
+# -------------------------------------------------------- Code in progress
+mydf = pd.DataFrame(list(zip(duration, id_stored, date, intensity_max, intensity_min, intensity_mean, intensity_cumulative,
+                                 coordinates, area, year)), columns = ['duration','id_stored','date','intensity_max','intensity_min','intensity_mean','intensity_cumulative','coordinates','area','year'])
+
+#mydf.to_csv('out.csv')
+
+year_list = []; area_list = []
+for i in range(len(mydf)):
+    year = mydf['year'][i][0]
+    year_list.append(year)
+    area_list.append(mydf['area'][i][0])
+
