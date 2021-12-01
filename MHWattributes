@@ -21,49 +21,14 @@ InteractiveShell.ast_node_interactivity = "all"
 # Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
 from IPython.display import HTML
 
-ds_blob = xr.open_dataset("blobs_sample.nc")
-ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc")
+ds_blob = xr.open_dataset("blobs_sample.nc"); label = ds_blob['labels'][:,:,:]
+ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc"); ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
 
-ds_blob
-ds_detrendedSSTA
+#Trying this
+id = 10
+event = label.where(label==id, drop=True)
+event.shape
+# print(event)
 
-label = ds_blob['labels'][:]
-ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
-label.shape
-ssta.shape
-
-# ------------- Working code (mostly from Ocetrac github files)
-# ------------- Note: loops are so slow. How can I optimize this?
-duration = []; id_stored = []; date = []
-intensity_max = []; intensity_min = []; intensity_mean = []; intensity_cumulative = []
-coordinates = []
-
-for i in range(1,int(np.max(label))):
-    event = label.where(label==id, drop=True)
-    
-    duration.append(list(event.shape)[0])
-    id_stored.append(int(np.nanmedian(event.values)))
-    date.append(event.time.values.astype('datetime64[M]'))
-    
-    event_ssta = ssta.where(event>0,drop=True)
-    intensity_mean.append(event_ssta.mean(('lat','lon')).values)
-    intensity_max.append(event_ssta.max(('lat','lon')).values)
-    intensity_min.append(event_ssta.min(('lat','lon')).values)
-    intensity_cumulative.append(np.nansum(event_ssta))
-    coords = event.stack(z=('lat','lon'))
-    coord_pairs = [(coords.isel(time=t[0]).dropna(dim='z', how='any').z.lat.values, 
-                coords.isel(time=t[0]).dropna(dim='z', how='any').z.lon.values) for t in enumerate(event.time)]
-    coordinates.append(coord_pairs)   
-
-# -------------------------------------------------------- Code in progress
-mydf = pd.DataFrame(list(zip(duration, id_stored, date, intensity_max, intensity_min, intensity_mean, intensity_cumulative,
-                                 coordinates, area, year)), columns = ['duration','id_stored','date','intensity_max','intensity_min','intensity_mean','intensity_cumulative','coordinates','area','year'])
-
-#mydf.to_csv('out.csv')
-
-year_list = []; area_list = []
-for i in range(len(mydf)):
-    year = mydf['year'][i][0]
-    year_list.append(year)
-    area_list.append(mydf['area'][i][0])
-
+%%time
+event = label.groupby(label)
