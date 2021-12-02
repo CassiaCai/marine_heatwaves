@@ -17,6 +17,7 @@ subset_as_df = subset.df
 grouped_df_subset = subset_as_df.groupby('member_id')
 # ---------------------------------------------------------------------------------------------------------
 ##### Load all 100 ensemble members into a list called SST_full so that it is easier to manipulate
+##### This takes a lot of memory space!!
 %%time
 i = 1
 SST_full = []
@@ -26,11 +27,13 @@ for l, ent in grouped_df_subset:
     dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
     key = list(dsets.keys())[0]
     ds = dsets[str(key)]
-    SST_full.append(ds.SST.isel(member_id=0))
+    SST_full.append(ds.SST.isel(member_id=0).load())
     i+= 1
 # ---------------------------------------------------------------------------------------------------------
 ##### Calculate the ensemble mean across all enmseble members
-
+%%time
+ensemble_mean = sum(SST_full)/len(SST_full)
+ensemble_mean
 # ---------------------------------------------------------------------------------------------------------
 ##### Remove the ensemble mean from each of the ensemble members (one-on-one subtraction)?
 ##### For example: (ensemble_member_I) - (ensemble_mean) = (ensemble_member_Inew)
