@@ -1,33 +1,24 @@
 #!/usr/bin/env python
+# ---------------------------------------------------------------------------------------------------------
+##### Import all necessary (and some unnecessary packages in case we need them)
 import s3fs; import xarray as xr; import numpy as np
-import pandas as pd; 
-import dask.array as da
-import ocetrac
-
+import pandas as pd;import dask.array as da; import ocetrac
 import matplotlib.pyplot as plt; import cartopy.crs as ccrs
-
 import warnings; import expectexception
 warnings.filterwarnings('ignore')
-
-import netCDF4 as nc; import datetime as dt
-import scipy
-
-import intake; import pprint
-# Allow multiple lines per cell to be displayed without print (default is just last line)
-from IPython.core.interactiveshell import InteractiveShell
-InteractiveShell.ast_node_interactivity = "all"
-# Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
-# from IPython.display import HTML
-
+import netCDF4 as nc; import datetime as dt; import scipy; import intake; import pprint
+# ---------------------------------------------------------------------------------------------------------
+##### Open original collection description file
 cat_url_orig = '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json'
 coll_orig = intake.open_esm_datastore(cat_url_orig)
 
 subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical')
 subset_as_df = subset.df
 grouped_df_subset = subset_as_df.groupby('member_id')
-print(len(grouped_df_subset))
-
+# ---------------------------------------------------------------------------------------------------------
+##### Load all 100 ensemble members into a list called SST_full so that it is easier to manipulate
 %%time
+i = 1
 SST_full = []
 for l, ent in grouped_df_subset:
     print(i, l)
@@ -35,5 +26,25 @@ for l, ent in grouped_df_subset:
     dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
     key = list(dsets.keys())[0]
     ds = dsets[str(key)]
-    SST = ds.SST.isel(member_id=0)
-    SST_full.append(SST)
+    SST_full.append(ds.SST.isel(member_id=0))
+    i+= 1
+# ---------------------------------------------------------------------------------------------------------
+##### Calculate the ensemble mean across all enmseble members
+
+# ---------------------------------------------------------------------------------------------------------
+##### Remove the ensemble mean from each of the ensemble members (one-on-one subtraction)?
+##### For example: (ensemble_member_I) - (ensemble_mean) = (ensemble_member_Inew)
+
+# ---------------------------------------------------------------------------------------------------------
+##### More concrete steps:
+##### Try 1: set range (40N to 50N) and (150W to 120W) first. Then run Ocetrac
+
+# ---------------------------------------------------------------------------------------------------------
+##### More concrete steps:
+##### Try 2: Run Ocetrac on the entire grid. Then look at data only from range (40N to 50N) and (150W to 120W)
+
+# ---------------------------------------------------------------------------------------------------------
+##### Save all files as .nc files into a folder.
+
+# ---------------------------------------------------------------------------------------------------------
+##### Analysis conducted in different file on Github called:  
