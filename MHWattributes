@@ -21,14 +21,13 @@ InteractiveShell.ast_node_interactivity = "all"
 # Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
 from IPython.display import HTML
 
-ds_blob = xr.open_dataset("blobs_sample.nc"); label = ds_blob['labels'][:,:,:]
-ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc"); ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
+ds_blob = xr.open_dataset("blobs_sample.nc")
+#label = ds_blob['labels'][:,:,:]
+ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc")
+#ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
 
-#Trying this
-id = 10
-event = label.where(label==id, drop=True)
-event.shape
-# print(event)
+combined = xr.combine_by_coords([ds_blob, ds_detrendedSSTA])
+combined
 
 %%time
-event = label.groupby(label)
+event = combined.groupby(combined.labels) #Amazing! Only 20 seconds
