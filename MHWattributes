@@ -42,4 +42,7 @@ def event_char(ent):
         lat = gro.lat
         lon = gro.lon
         time = gro.time
-        # CONTINUE HERE
+        intensity_mean = gro['__xarray_dataarray_variable__'].mean() #check this
+        intensity_max = gro['__xarray_dataarray_variable__'].max()
+        intensity_min = gro['__xarray_dataarray_variable__'].min()
+        intensity_cumulative = gro['__xarray_dataarray_variable__'].sum()
