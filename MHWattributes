@@ -31,3 +31,15 @@ combined
 
 %%time
 event = combined.groupby(combined.labels) #Amazing! Only 20 seconds
+
+def event_char(ent):
+    time_begin = ent.time[0]
+    time_end = ent.time[-1]
+    duration = len(ent.groupby("time"))
+    
+    groupedby_by_time = ent.groupby(ent.time)
+    for n, gro in groupedby_by_time:
+        lat = gro.lat
+        lon = gro.lon
+        time = gro.time
+        # CONTINUE HERE
