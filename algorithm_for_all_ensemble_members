@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+import s3fs; import xarray as xr; import numpy as np
+import pandas as pd; 
+import dask.array as da
+import ocetrac
+
+import matplotlib.pyplot as plt; import cartopy.crs as ccrs
+
+import warnings; import expectexception
+warnings.filterwarnings('ignore')
+
+import netCDF4 as nc; import datetime as dt
+import scipy
+
+import intake; import pprint
+# Allow multiple lines per cell to be displayed without print (default is just last line)
+from IPython.core.interactiveshell import InteractiveShell
+InteractiveShell.ast_node_interactivity = "all"
+# Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
+# from IPython.display import HTML
+
+cat_url_orig = '/glade/collections/cmip/catalog/intake-esm-datastore/catalogs/glade-cesm2-le.json'
+coll_orig = intake.open_esm_datastore(cat_url_orig)
+
+subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical')
+subset_as_df = subset.df
+grouped_df_subset = subset_as_df.groupby('member_id')
+print(len(grouped_df_subset))
+
+%%time
+SST_full = []
+for l, ent in grouped_df_subset:
+    print(i, l)
+    subset = coll_orig.search(component='atm',variable='SST',frequency='month_1',experiment='historical',member_id=l)
+    dsets = subset.to_dataset_dict(zarr_kwargs={"consolidated": True}, storage_options={"anon": True})
+    key = list(dsets.keys())[0]
+    ds = dsets[str(key)]
+    SST = ds.SST.isel(member_id=0)
+    SST_full.append(SST)
