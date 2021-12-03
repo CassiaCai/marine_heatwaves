@@ -30,14 +30,23 @@ for l, ent in grouped_df_subset:
     SST_full.append(ds.SST.isel(member_id=0).load())
     i+= 1
 # ---------------------------------------------------------------------------------------------------------
-##### Calculate the ensemble mean across all enmseble members
+##### Calculate the ensemble mean across all ensemble members and save ensemble mean
+##### CPU times: user 5min 47s, sys: 19.2 s, total: 6min 6s
+##### Wall time: 6min 49s
+##### around 50 GB
 %%time
 ensemble_mean = sum(SST_full)/len(SST_full)
 ensemble_mean
+ensemble_mean._to_netcdf('ensemble_mean.nc')
+ensemble_mean.close()
+print ('finished saving')
 # ---------------------------------------------------------------------------------------------------------
 ##### Remove the ensemble mean from each of the ensemble members (one-on-one subtraction)?
 ##### For example: (ensemble_member_I) - (ensemble_mean) = (ensemble_member_Inew)
-
+SST_full_no_mean = []
+for i in range(100):
+    SST_full_no_mean.append(SST_full[i]-ensemble_mean)
+##### Save as xarray. Some steps were changed here so that this session would not take too much memory. 
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 1: set range (40N to 50N) and (150W to 120W) first. Then run Ocetrac
