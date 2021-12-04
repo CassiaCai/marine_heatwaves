@@ -134,3 +134,11 @@ print(event.sel(time=slice('01-01-2014', '04-01-2014')))
 
 event_intensity = detrended.where((ds.time==event.time), drop=True).load()
 print(event_intensity.shape)
+
+##### DOMAIN FILE (FOR LAND MASK) #-------------------------------------------------------
+fname = '/glade/p/cesm/cseg/inputdata/share/domains/domain.lnd.fv0.9x1.25_gx1v7.151020.nc'
+DS=xr.open_dataset(fname)
+frac = DS.frac
+ocn = frac.where(frac == 0.)
+afterlandmask=np.isfinite(ocn)
+afterlandmask.plot()
