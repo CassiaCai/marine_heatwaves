@@ -81,7 +81,23 @@ SSTA_full
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 1: set range (40N to 50N) and (150W to 120W) first. Then run Ocetrac
+%%time
+SSTA_full_new = SSTA_full.where((SSTA_full.lat >= 39.109948) & (SSTA_full.lat <= 50.418848) 
+                        &(SSTA_full.lon >= 200.0) & (SSTA_full.lon <= 236.),drop=True)
 
+threshold = SSTA_full_new.groupby('time.month').quantile(0.9,dim=('time')) 
+features_ssta = SSTA_full_new.where(SSTA_full_new.groupby('time.month')>=threshold, other=np.nan)
+features_ssta
+
+%%time
+features_ssta= features_ssta.load()
+
+full_mask_land = features_ssta
+full_masked = full_mask_land.where(full_mask_land != 0)
+
+binary_out_afterlandmask=np.isfinite(full_masked)
+
+print(binary_out_afterlandmask)
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 2: Run Ocetrac on the entire grid. Then look at data only from range (40N to 50N) and (150W to 120W)
