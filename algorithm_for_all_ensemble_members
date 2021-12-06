@@ -115,15 +115,35 @@ blobs = Tracker.track()
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 2: Run Ocetrac on the entire grid. Then look at data only from range (40N to 50N) and (150W to 120W)
-%%time
-SSTA_full_one_member = SSTA_full.SST#.isel(member_id=0)
-threshold = SSTA_full_one_member.groupby('time.month').quantile(0.9,dim=('time')) 
-features_ssta = SSTA_full_one_member.where(SSTA_full_one_member.groupby('time.month')>=threshold, other=np.nan)
-features_ssta
+##### Takes a long time to run this step. I would have to wait forever to run 100 ensemble members. 
+detrended = SSTA_full.SST.isel(member_id=0)
+
+if detrended.chunks:
+    detrended = detrended.chunk({'time': -1})
+    
+threshold = detrended.groupby('time.month').quantile(0.9,dim=('time')) 
+features_ssta = detrended.where(detrended.groupby('time.month')>=threshold, other=np.nan)
 
 %%time
-features_ssta= features_ssta.load()
+features_ssta= features_ssta[:,:,:].load()
 
+timed = 300
+full_mask_land = features_ssta
+full_masked = full_mask_land.where(full_mask_land != 0)
+binary_out_afterlandmask=np.isfinite(full_masked)
+
+binary_out_afterlandmask[timed,:,:].plot()
+
+mask = np.isfinite(SST_full.SST.isel(time=0, member_id=0)) 
+mask.plot()
+
+%%time
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], mask, radius=6, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+blobs = Tracker.track()
+
+blobs.attrs
+np.nanmax(blobs['time'])
+blobs.to_netcdf("blobs_ensemble1_rad6.nc")
 # ---------------------------------------------------------------------------------------------------------
 ##### Save all files as .nc files into a folder.
 
