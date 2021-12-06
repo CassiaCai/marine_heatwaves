@@ -76,8 +76,13 @@ newfile = xr.concat([SST_full[0], SST_full[17], SST_full[34], SST_full[51],
                     ],dim='member_id')
 newfile.to_netcdf('SSTA_full.nc', encoding={'dis': {'zlib': True}})
 
+# ---------------------------------------------------------------------------------------------------------
+##### We now have saved files. Let's take a look.
+SST_full = xr.open_dataset('SST_full.nc')
+print(SST_full)
+
 SSTA_full = xr.open_dataset('SSTA_full.nc')
-SSTA_full
+print(SSTA_full)
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 1: set range (40N to 50N) and (150W to 120W) first. Then run Ocetrac
@@ -98,9 +103,26 @@ full_masked = full_mask_land.where(full_mask_land != 0)
 binary_out_afterlandmask=np.isfinite(full_masked)
 
 print(binary_out_afterlandmask)
+
+newmask_1 = SST_full_new.SST.isel(member_id=0)
+newmask = newmask_1.where(newmask_1 != 0)
+
+newmasked = np.isfinite(newmask)
+
+Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmasked[1850,:,:], radius=1, min_size_quartile=0., timedim = 'time', xdim = 'lon', ydim='lat', positive=True)
+blobs = Tracker.track()
+##### !! ERROR: ValueError: Found only zeros in `mask` input. The mask should indicate valid regions with values of 1
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 2: Run Ocetrac on the entire grid. Then look at data only from range (40N to 50N) and (150W to 120W)
+%%time
+SSTA_full_one_member = SSTA_full.SST#.isel(member_id=0)
+threshold = SSTA_full_one_member.groupby('time.month').quantile(0.9,dim=('time')) 
+features_ssta = SSTA_full_one_member.where(SSTA_full_one_member.groupby('time.month')>=threshold, other=np.nan)
+features_ssta
+
+%%time
+features_ssta= features_ssta.load()
 
 # ---------------------------------------------------------------------------------------------------------
 ##### Save all files as .nc files into a folder.
