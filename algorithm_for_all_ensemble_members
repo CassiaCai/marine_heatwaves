@@ -113,7 +113,7 @@ Tracker = ocetrac.Tracker(binary_out_afterlandmask[:,:,:], newmasked[1850,:,:], 
 blobs = Tracker.track()
 ##### !! ERROR: ValueError: Found only zeros in `mask` input. The mask should indicate valid regions with values of 1
 ##### !! ERROR: Check why this does not give me any MHWs. 
-##### !! ATTEMPT: On OISST code
+##### !! ATTEMPT: On OISST code. Are there objects across the threshold? Still keeping objects? When is this actually breaking?
 # ---------------------------------------------------------------------------------------------------------
 ##### More concrete steps:
 ##### Try 2: Run Ocetrac on the entire grid. Then look at data only from range (40N to 50N) and (150W to 120W)
