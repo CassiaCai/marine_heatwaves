@@ -152,7 +152,4 @@ blobs.to_netcdf("blobs_ensemble1_rad6.nc")
 # ---------------------------------------------------------------------------------------------------------
 ##### Analysis conducted in different file on Github called:  
 
-
-
-
 ##### If Casper doesn't work, try to use loon on Jupyter hub. Compare and contrast.
