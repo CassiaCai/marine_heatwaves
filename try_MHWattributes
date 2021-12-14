@@ -20,29 +20,95 @@ from IPython.core.interactiveshell import InteractiveShell
 InteractiveShell.ast_node_interactivity = "all"
 # Enable more explicit control of DataFrame display (e.g., to omit annoying line numbers)
 from IPython.display import HTML
+# from scipy.sparse import csr_matrix
 
-ds_blob = xr.open_dataset("blobs_sample.nc")
-#label = ds_blob['labels'][:,:,:]
-ds_detrendedSSTA = xr.open_dataset("detrended_sample.nc")
-#ssta = ds_detrendedSSTA['__xarray_dataarray_variable__'][:]
+# find a way to load this in quicker/optimise this code
+blob_ens_0 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_0_rad7.nc')
+blob_ens_1 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_1_rad7.nc')
+blob_ens_2 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_2_rad7.nc')
+blob_ens_3 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_3_rad7.nc')
+blob_ens_4 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_4_rad7.nc')
+blob_ens_5 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_5_rad7.nc')
+blob_ens_6 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_6_rad7.nc')
+blob_ens_7 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_7_rad7.nc')
+blob_ens_8 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_8_rad7.nc')
+blob_ens_9 = xr.open_dataset('/glade/work/cassiacai/blobs_ens_9_rad7.nc')
 
-combined = xr.combine_by_coords([ds_blob, ds_detrendedSSTA])
-combined
+SST_full = xr.open_dataset('/glade/work/cassiacai/SST_full.nc')
+first_10_members_SST = SST_full.isel(member_id = [0,1,2,3,4,5,6,7,8,9])
+first_10_members_SST
+
+SSTA_full = xr.open_dataset('/glade/work/cassiacai/SSTA_full.nc')
+first_10_members_SSTA = SSTA_full.isel(member_id = [0,1,2,3,4,5,6,7,8,9])
+first_10_members_SSTA
+
+combined_0 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 0), blob_ens_0])
+combined_1 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 1), blob_ens_1])
+combined_2 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 2), blob_ens_2])
+combined_3 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 3), blob_ens_3])
+combined_4 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 4), blob_ens_4])
+combined_5 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 5), blob_ens_5])
+combined_6 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 6), blob_ens_6])
+combined_7 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 7), blob_ens_7])
+combined_8 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 8), blob_ens_8])
+combined_9 = xr.combine_by_coords([first_10_members_SSTA.isel(member_id = 9), blob_ens_9])
 
 %%time
-event = combined.groupby(combined.labels) #Amazing! Only 20 seconds
+events_0 = combined_0.groupby(combined_0.labels)
+events_1 = combined_1.groupby(combined_1.labels)
+events_2 = combined_2.groupby(combined_2.labels)
+events_3 = combined_3.groupby(combined_3.labels)
+events_4 = combined_4.groupby(combined_4.labels)
+events_5 = combined_5.groupby(combined_5.labels)
+events_6 = combined_6.groupby(combined_6.labels)
+events_7 = combined_7.groupby(combined_7.labels)
+events_8 = combined_8.groupby(combined_8.labels)
+events_9 = combined_9.groupby(combined_9.labels)
 
-def event_char(ent):
-    time_begin = ent.time[0]
-    time_end = ent.time[-1]
-    duration = len(ent.groupby("time"))
-    
+combined_0_NEP = combined_0.where((combined_0.lat >= 39.109948) & (combined_0.lat <= 50.418848)
+                                &(combined_0.lon >= 200.0) & (combined_0.lon <= 236.),drop=True)
+combined_0_NEP
+
+np.unique(combined_0_NEP.labels)
+len(np.unique(combined_0_NEP.labels))
+
+%%time
+events_0_NEP = combined_0_NEP.groupby(combined_0_NEP.labels) 
+
+file = events_0_NEP
+
+label_ls = []; time_begin_ls = []; time_end_ls = []; duration_ls = []; 
+intense_mean = []; intense_max = []; intense_min = [];intense_cumu = []
+coords = []; cell_area_ls = []
+
+for l, ent in file:
+    label_ls.append(l)
     groupedby_by_time = ent.groupby(ent.time)
+    time_begin = ent.time[0].values; time_begin_ls.append(time_begin)
+    time_end = ent.time[-1].values; time_end_ls.append(time_end)
+    duration = len(ent.groupby("time")); duration_ls.append(duration)
+    
+    temp_intense_mean = []; temp_intense_max = []; temp_intense_min = []; temp_intense_cumu = []
+    temp_coords = []; temp_cell_area = []
     for n, gro in groupedby_by_time:
-        lat = gro.lat
-        lon = gro.lon
-        time = gro.time
-        intensity_mean = gro['__xarray_dataarray_variable__'].mean() #check this
-        intensity_max = gro['__xarray_dataarray_variable__'].max()
-        intensity_min = gro['__xarray_dataarray_variable__'].min()
-        intensity_cumulative = gro['__xarray_dataarray_variable__'].sum()
+        lat = gro.lat.values
+        lon = gro.lon.values
+        time = gro.time.values
+        
+        intensity_mean_val = gro['SST'].values.mean(); temp_intense_mean.append(intensity_mean_val)
+        intensity_max_val = gro['SST'].values.max(); temp_intense_max.append(intensity_max_val)
+        intensity_min_val = gro['SST'].values.min(); temp_intense_min.append(temp_intense_min)
+        intensity_cumulative_val = gro['SST'].values.sum(); temp_intense_cumu.append(intensity_cumulative_val)
+        
+        coords = list(zip(lat, lon)); temp_coords.append(coords)
+        y,x=zip(*coords)
+        dlon = [np.cos(y[c]*np.pi/180)*(111.320*1) for c in np.arange(0, len(coords))]
+        dlat = (110.574 *1) * np.ones(len(dlon))
+        cell_area = [np.sum(dlon[c]*dlat[c]) for c in np.arange(0, len(coords))]; temp_cell_area.append(cell_area)
+#         print(cell_area)
+    intense_mean.append(temp_intense_mean)
+    intense_max.append(temp_intense_max)
+    intense_min.append(temp_intense_min) 
+    intense_cumu.append(temp_intense_cumu)
+    coords.append(temp_coords)
+    cell_area_ls.append(temp_cell_area)
