@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+# ---------------------------------------------------------------------------------------------------------
+import s3fs; import xarray as xr; import numpy as np
+import pandas as pd; 
+import dask.array as da
+import ocetrac
+
+import matplotlib.pyplot as plt; import cartopy.crs as ccrs
+
+import warnings; import expectexception
+warnings.filterwarnings('ignore')
+
+import netCDF4 as nc; import datetime as dt
+import scipy
+
+import intake; import pprint
+
+# ---------------------------------------------------------------------------------------------------------
+ensemble_mean = xr.open_dataset('/glade/work/cassiacai/ensemble_mean.nc')
+ensemble_mean_new = ensemble_mean.where((ensemble_mean.lat >= 30) & (ensemble_mean.lat <= 60) 
+                        &(ensemble_mean.lon >= 200.0) & (ensemble_mean.lon <= 250.),drop=True)
+                        
+ensemble_mean_new
+ensemble_mean_new_nans = ensemble_mean_new.where(ensemble_mean_new != 0)
+ensemble_mean_new_nans.SST[0,:,:].plot()
+
+ensemble_mean_SST = []; ensemble_max_SST = []; ensemble_min_SST = []; time_scale = []
+for i in range(0,1980,12):
+    time_scale.append(i)
+    timed_SST = ensemble_mean_new_nans.SST[i,:,:]
+    mean = np.nanmean(timed_SST); ensemble_mean_SST.append(mean)
+    maximum = np.nanmax(timed_SST); ensemble_max_SST.append(maximum)
+    minimum = np.nanmin(timed_SST); ensemble_min_SST.append(minimum)
+
+plt.title('Ensemble Mean SST',fontsize=15)
+plt.rcParams["figure.figsize"] = (15,5)
+plt.plot(time_scale, ensemble_mean_SST)
+plt.xlim(-20,2000); plt.ylim(284,285)
+plt.xlabel('time',fontsize=14); plt.ylabel('SST (°C)',fontsize=14)
+plt.xticks(fontsize=13, rotation=0); plt.yticks(fontsize=13, rotation=0)
+plt.show()
+
+# ---------------------------------------------------------------------------------------------------------
