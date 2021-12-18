@@ -41,3 +41,47 @@ plt.xticks(fontsize=13, rotation=0); plt.yticks(fontsize=13, rotation=0)
 plt.show()
 
 # ---------------------------------------------------------------------------------------------------------
+SST_full = xr.open_dataset('SST_first10.nc')
+first_10_members_SST = SST_full.isel(member_id = [0,1,2,3,4,5,6,7,8,9])
+first_10_members_SST
+
+first_10_members_SST_new = first_10_members_SST.where((first_10_members_SST.lat >= 30) & (first_10_members_SST.lat <= 60) 
+                        &(first_10_members_SST.lon >= 200.0) & (first_10_members_SST.lon <= 250.),drop=True)
+
+first_10_members_SST_new_nans = first_10_members_SST_new.SST.where(first_10_members_SST_new.SST != 0)
+first_10_members_SST_new = first_10_members_SST_new_nans
+
+full_mean_SST = []; full_max_SST = []; full_min_SST = []; full_time_scale_SST = []
+
+for j in range(0,10):
+    mean_SST = []; max_SST = []; min_SST = []; time_scale_SST = []
+    for i in range(0,1980,12): 
+        time_scale_SST.append(i)
+        timed_SST = first_10_members_SST_new[j, i, :, :]
+        mean = np.nanmean(timed_SST); mean_SST.append(mean)
+        maximum = np.nanmax(timed_SST); max_SST.append(maximum)
+        minimum = np.nanmin(timed_SST); min_SST.append(minimum)
+    full_mean_SST.append(mean_SST)
+    full_max_SST.append(max_SST)
+    full_min_SST.append(min_SST)
+    full_time_scale_SST.append(time_scale_SST)
+
+plt.rcParams["figure.figsize"] = (15,5)
+plt.plot(full_time_scale_SST[0], full_mean_SST[0],alpha=0.8)
+plt.plot(full_time_scale_SST[1], full_mean_SST[1],alpha=0.8)
+plt.plot(full_time_scale_SST[2], full_mean_SST[2],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[3],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[4],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[5],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[6],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[7],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[8],alpha=0.8)
+plt.plot(full_time_scale_SST[3], full_mean_SST[9],alpha=0.8)
+
+plt.plot(time_scale, ensemble_mean_SST,linewidth=6,color='red')
+
+plt.xlim(-20,2000); plt.ylim(283,285.8)
+plt.xlabel('time',fontsize=14); plt.ylabel('SST (°C)',fontsize=14)
+plt.xticks(fontsize=13, rotation=0); plt.yticks(fontsize=13, rotation=0)
+plt.show()
+# ---------------------------------------------------------------------------------------------------------
