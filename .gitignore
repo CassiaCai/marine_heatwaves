@@ -1,0 +1,11 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Netcdf
+.nc
+
+# Pickle files
+.pkl
+
+# Numpy files
+.npy
