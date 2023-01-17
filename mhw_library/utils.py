@@ -1,3 +1,4 @@
+# this file contains functions useful for beginnin
 import xarray as xr
 
 def create_events_file(detrended, blobs):
