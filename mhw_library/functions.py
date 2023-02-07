@@ -106,7 +106,7 @@ def number_of_mhws(event_file: xarray.Dataset) -> int:
     """
     return len(np.unique(event_file.labels)) - 1
 
-def calc_duration(event_file: , mhw_id):
+def calc_duration(event_file , mhw_id):
     """
     Calculates the number of timesteps the object identifier
     appears in the event_file
