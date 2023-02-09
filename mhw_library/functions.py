@@ -4,6 +4,7 @@ from skimage.morphology import convex_hull_image
 from skimage.measure import label as label_np, regionprops
 from scipy import ndimage
 import xarray as xr
+from typing import Tuple
 
 def apply_ocetrac_to_CESM2LE(member_id_val=0, threshold_val=0.9, radius_val=3, min_size_quartile_val=0.75, start_val=0, end_val=1980):
     """
@@ -590,6 +591,9 @@ def calc_com_per_timestep(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_tim
     Returns
     ------------
         1. centroid_list
+    Notes
+    -----------
+    
     """
     timestep_of_interest = forOneMHW_onlylabels_timesteps[timestep,:,:] # labels in one given timestep
     SSTA_in_timestep = forOneMHW_onlySSTA_timesteps[timestep,:,:] # SSTA in one given timestep
