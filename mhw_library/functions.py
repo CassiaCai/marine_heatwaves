@@ -3,6 +3,7 @@ from skimage import img_as_float
 from skimage.morphology import convex_hull_image
 from skimage.measure import label as label_np, regionprops
 from scipy import ndimage
+import xarray as xr
 
 def apply_ocetrac_to_CESM2LE(member_id_val=0, threshold_val=0.9, radius_val=3, min_size_quartile_val=0.75, start_val=0, end_val=1980):
     """
@@ -94,7 +95,7 @@ def create_events_file(detrended, blobs):
     detrended.name = 'SSTA'
     return xr.merge([detrended, blobs])
 
-def number_of_mhws(event_file: xarray.Dataset) -> int:
+def calc_number_of_mhws(event_file):
     """
     Find the total number of objects in an event file
     Parameters
@@ -106,7 +107,7 @@ def number_of_mhws(event_file: xarray.Dataset) -> int:
     """
     return len(np.unique(event_file.labels)) - 1
 
-def calc_duration(event_file: , mhw_id):
+def calc_duration(event_file , mhw_id):
     """
     Calculates the number of timesteps the object identifier
     appears in the event_file
@@ -139,7 +140,7 @@ def calc_cumulativeintensity(event_file, mhw_id):
     cumulative_intensity_monthly = for_one_mhw.SSTA.sum(axis=(1,2))
     return cumulative_intensity, cumulative_intensity_monthly #cumulative_intensity_monthly.values
 
-def calc_meanintensity(event_file, mhw_id) -> Tuple:
+def calc_meanintensity(event_file, mhw_id):
     """
     Calculates the (1) mean intensity of the object as a 
     mean of all its grid points over all timesteps and (2)
@@ -177,7 +178,7 @@ def calc_maximumintensity(event_file, mhw_id):
     max_intensity_monthly = for_one_mhw.SSTA.max(axis=(1,2))
     return max_intensity.SSTA, max_intensity_monthly
 
-def calc_stdintensity(event_file, mhw_id) -> Tuple:
+def calc_stdintensity(event_file, mhw_id):
     """
     Calculates the (1) standard deviation (stdev) of the intensity of the
     object as a stdev of all its grid points over all timesteps and (2)
@@ -231,7 +232,7 @@ def calc_spatialextent(event_file, mhw_id):
     cumulative_spatial_extent = np.sum(spatial_extents)
     return coords_full, spatial_extents, max_spatial_extent, max_spatial_extent_time, mean_spatial_extent, cumulative_spatial_extent
 
-def initialization(event_file, mhw_id):
+def calc_initialization(event_file, mhw_id):
     """
     Gets the initialization state information
     Parameters
@@ -501,7 +502,7 @@ def forOneMHW_SSTA_only(event_file, mhw_id):
     forOneMHW_only_timesteps = for_one_mhw.SSTA[timesteps_to_choose_from,:,:]
     return forOneMHW_only_timesteps
 
-def centroids_per_timestep(forOneMHW_onlylabels_timesteps, timestep):
+def calc_centroids_per_timestep(forOneMHW_onlylabels_timesteps, timestep):
     """
     Finds the locations of the centroids of an object at each timestep
     Parameters
@@ -577,7 +578,7 @@ def _get_center_of_mass(intensity_image):
             w_centroids[i] = (w_centroids[i][0], list(w_centroids[i])[1] - 359.75)
     return w_centroids
 
-def com_per_timestep(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_timesteps, timestep):
+def calc_com_per_timestep(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_timesteps, timestep):
     """
     Finds the center of mass of an object at each timestep. 
     There can only be 1 center of mass per object per timestep.
@@ -626,7 +627,7 @@ def com_per_timestep(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_timestep
                 centroid_list.append(_get_center_of_mass(append_east_SSTA)[0])
     return centroid_list
 
-def displacement(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_timesteps):
+def calc_displacement(forOneMHW_onlylabels_timesteps, forOneMHW_onlySSTA_timesteps):
     """
     Tracks the centoid and center of masses 
     Parameters
