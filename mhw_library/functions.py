@@ -319,7 +319,7 @@ def convert_from_timeres_to_months(time_step):
     month
     """
     bymonth = np.resize(np.arange(1,13),12*166)[1:-11]
-    month = bymonth[first_timestep]
+    month = bymonth[time_step]
     return month
 
 def calc_compltodeform(coords_full, spatial_extents):
