@@ -8,6 +8,8 @@ from scipy.interpolate import interp1d
 from haversine import haversine, Unit
 from typing import Tuple
 
+import utils.py
+
 def calc_duration(
     merged_xarray : xr.Dataset, 
     mhw_id : int) -> int:
@@ -181,8 +183,7 @@ def calc_perimeter(
         1. perimeter_ls
     """
     one_obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    # todo: calc_initialization comes from utils.py, import utils.py correctly
-    first_timestep, first_array, month = calc_initialization(merged_xarray, mhw_id)
+    first_timestep, first_array, month = utils.calc_initialization(merged_xarray, mhw_id)
     timesteps_to_choose_from = np.arange(first_timestep, first_timestep+duration)
 
     convert_long_range = interp1d([0,360],[-180,180])
@@ -391,8 +392,7 @@ def calc_centroids_per_timestep(
     # Step 1. We start with one timestep and get all the sublabels
     timestep_of_interest = forOneMHW_onlylabels_timesteps[timestep,:,:]
     get_sub_lbs = timestep_of_interest
-    # todo: the function _get_labels comes from utils.py. Load it correctly.
-    sub_labels = _get_labels(get_sub_lbs)
+    sub_labels = utils._get_labels(get_sub_lbs)
     sub_labels = xr.DataArray(sub_labels, dims=get_sub_lbs.dims, coords=get_sub_lbs.coords)
     sub_labels = sub_labels.where(timestep_of_interest>0, drop=False, other=np.nan)
 
@@ -409,8 +409,7 @@ def calc_centroids_per_timestep(
     centroid_list = []
     for i in nonedgecases:
         sub_labels_nonedgecases = sub_labels.where(sub_labels==i, drop=False, other=np.nan)
-        # todo: the function _get_centroids comes from utils.py. Load it correctly.
-        centroid_list.append(_get_centroids(sub_labels_nonedgecases))
+        centroid_list.append(utils._get_centroids(sub_labels_nonedgecases))
     
     for i in edge_left_sub_labels:
         sub_labels_left = sub_labels.where(sub_labels==i, drop=True)
@@ -422,11 +421,10 @@ def calc_centroids_per_timestep(
             east = sub_labels_right.where(sub_labels_right.lon > lon_edge, drop=True)
             append_east = xr.concat([east.where(east.lon >= lon_edge, drop=True), sub_labels_left], dim="lon")
             append_east_binarized = xr.where(append_east > 0, 1, np.nan)
-            # todo: the function _get_labels comes from utils.py. Load it correctly.
-            sub_labels = _get_labels(append_east_binarized)
+            sub_labels = utils._get_labels(append_east_binarized)
             sub_labels = xr.DataArray(sub_labels, dims=append_east_binarized.dims, coords=append_east_binarized.coords)
             sub_labels = sub_labels.where(append_east_binarized>0, drop=False, other=np.nan)
-            centroid_list.append(_get_centroids(sub_labels))
+            centroid_list.append(utils._get_centroids(sub_labels))
     
     flat_centroid_list = list(set([item for sublist in centroid_list for item in sublist]))
     return flat_centroid_list
@@ -453,8 +451,7 @@ def calc_com_per_timestep(
     """
     timestep_of_interest = forOneMHW_onlylabels_timesteps[timestep,:,:] # labels in one given timestep
     SSTA_in_timestep = forOneMHW_onlySSTA_timesteps[timestep,:,:] # SSTA in one given timestep
-    # todo: the function _get_labels comes from utils.py. Load it correctly.
-    sub_labels = _get_labels(timestep_of_interest) # use skimage to get sub_labels
+    sub_labels = utils._get_labels(timestep_of_interest) # use skimage to get sub_labels
     sub_labels = xr.DataArray(sub_labels, dims=timestep_of_interest.dims, coords=timestep_of_interest.coords)
     sub_labels = sub_labels.where(timestep_of_interest>0, drop=False, other=np.nan)
     
@@ -468,8 +465,7 @@ def calc_com_per_timestep(
     for i in nonedgecases:
         sub_labels_nonedgecases = xr.where(sub_labels==i, SSTA_in_timestep, np.nan)
         sub_labels_nonedgecases_labels = sub_labels.where(sub_labels==i, drop=False, other=np.nan)
-        # todo: the function _get_center_of_mass comes from utils.py. Load it correctly.
-        centroid_list.append(_get_center_of_mass(sub_labels_nonedgecases)[0])
+        centroid_list.append(utils._get_center_of_mass(sub_labels_nonedgecases)[0])
     
     for i in edge_left_sub_labels:
         sub_labels_left = sub_labels.where(sub_labels==i, drop=True)
@@ -488,7 +484,7 @@ def calc_com_per_timestep(
                 append_east = xr.concat([east.where(east.lon >= lon_edge, drop=True), sub_labels_left], dim="lon")
                 append_east_SSTA = xr.concat([east_SSTA.where(east_SSTA.lon >= lon_edge, drop=True), SSTA_left], dim="lon")
                 append_east = xr.where(append_east > 0, 1.0, np.nan)
-                centroid_list.append(_get_center_of_mass(append_east_SSTA)[0])
+                centroid_list.append(utils._get_center_of_mass(append_east_SSTA)[0])
     
     return centroid_list
 
@@ -521,10 +517,9 @@ def calc_displacement(
     for i in range(forOneMHW_onlylabels_timesteps.shape[0]):
         forOneMHW_onlylabels_timesteps = xr.where(forOneMHW_onlylabels_timesteps > 0, 1, np.nan)
         forOneMHW_onlySSTA_timesteps = xr.where(forOneMHW_onlySSTA_timesteps > 0, 1, np.nan)
-        # todo: the function _get_center_of_mass comes from utils.py. Load it correctly.
-        img_cent_xr_coords = _get_center_of_mass(forOneMHW_onlylabels_timesteps[i,:,:])
+        img_cent_xr_coords = utils._get_center_of_mass(forOneMHW_onlylabels_timesteps[i,:,:])
         centroid_xrcoords_ls.append(img_cent_xr_coords[0])
-        img_SSTA_xr_coords = _get_center_of_mass(forOneMHW_onlySSTA_timesteps[i,:,:])
+        img_SSTA_xr_coords = utils._get_center_of_mass(forOneMHW_onlySSTA_timesteps[i,:,:])
         com_xrcoords_ls.append(img_SSTA_xr_coords[0])
         img_cent = forOneMHW_onlylabels_timesteps[i,:,:].fillna(0)
         img_SSTA = forOneMHW_onlySSTA_timesteps[i,:,:].fillna(0)
