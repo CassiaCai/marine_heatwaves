@@ -150,7 +150,7 @@ def calc_spatial_extent(
         coords = list(zip(lats, lons))
         coords_full.append(coords)
         y,x=zip(*coords)
-        # todo: reference where the numbers for dlon and dlat
+        # approximate conversions from https://en.wikipedia.org/wiki/Latitude
         dlon = [np.cos(y[c]*np.pi/180)*(111.320*1) for c in np.arange(0, len(coords))]
         dlat = (110.574 *1) * np.ones(len(dlon))
         area = np.sum(dlon*dlat)
@@ -262,6 +262,7 @@ def calc_complement_to_deformormation(
         if a_set & b_set:
             coords = a_set & b_set
             y,x=zip(*coords)
+            # approximate conversions from https://en.wikipedia.org/wiki/Latitude
             dlon = [np.cos(y[c]*np.pi/180)*(111.320*1) for c in np.arange(0, len(coords))]
             dlat = (110.574 *1) * np.ones(len(dlon))
             sharedarea = np.sum(dlon*dlat)
