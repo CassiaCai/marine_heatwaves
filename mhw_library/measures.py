@@ -218,7 +218,8 @@ def calc_perimeter(merged_xarray: xr.Dataset, mhw_id: int, duration: int) -> lis
         A list of perimeters of the object at each timestamp.
     """
     obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    timesteps = np.arange(utils.calc_initialization(merged_xarray, mhw_id)[:2][0], duration)
+    timesteps = np.arange(utils.calc_initialization(merged_xarray, mhw_id)[:2][0],
+                          utils.calc_initialization(merged_xarray, mhw_id)[:2][0]+duration)
     long_range = interp1d([0,360],[-180,180])
     perimeters = []
     
