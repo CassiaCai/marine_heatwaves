@@ -5,7 +5,7 @@ with open("requirements.txt") as f:
     requirements = f.readlines()
 INSTALL_REQUIRES = [t.strip() for t in requirements]
 
-with open("requirements-dev.txt) as f:
+with open("requirements-dev.txt") as f:
     requirements = f.readlines()
 TEST_REQUIRES = [t.strip() for t in test_requirements]
 
