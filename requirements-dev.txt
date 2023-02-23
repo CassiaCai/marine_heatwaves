@@ -1,6 +1,6 @@
 haversine
 xarray
-netcdf8
+netcdf4
 s3fs
 asyncio
 intake
