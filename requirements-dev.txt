@@ -1,0 +1,9 @@
+haversine
+xarray
+netcdf4
+s3fs
+asyncio
+intake
+expectexception
+pytest
+
