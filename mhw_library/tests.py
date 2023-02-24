@@ -3,5 +3,3 @@ def test_import():
         import mhw_library
     except ImportError:
         no_requests = True
-       
- test_import()
