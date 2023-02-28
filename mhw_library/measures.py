@@ -28,7 +28,7 @@ def calc_duration(merged_xarray: xr.Dataset, mhw_id: int) -> int:
     """
     return len(merged_xarray.where(merged_xarray.labels==mhw_id, drop=True).time)
 
-def calc_cumulative_intensity(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[float, xr.DataArray]:
+def calc_total_intensity(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[float, xr.DataArray]:
     """
     Calculates the cumulative intensity of the object identifier in the merged_xarray,
     (1) as the sum of all its grid points over all timesteps,
