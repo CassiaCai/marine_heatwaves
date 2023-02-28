@@ -375,7 +375,7 @@ def calc_spatial_cross_correlation(merged_xarray: xr.Dataset, mhw_id: int, durat
         An array containing the spatial cross correlation values for the object at each timestep
     """
     one_obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    first_timestep, first_array, month = utils.get_initial_state(merged_xarray, mhw_id)
+    first_timestep, month, first_array = utils.get_initial_state(merged_xarray, mhw_id)
     timesteps_to_choose_from = np.arange(first_timestep, first_timestep+duration)
     cc_image_array = np.zeros((len(timesteps_to_choose_from), 192,288))    
     
