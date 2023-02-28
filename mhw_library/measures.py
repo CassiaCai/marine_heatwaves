@@ -537,9 +537,9 @@ def calc_displacement(
     Parameters
     ----------
     labels : xarray.DataArray
-        A 2D or 3D array with labeled regions of interest, where the labels correspond to MHW events.
+        A 3D array with labeled regions of interest, where the labels correspond to MHW events.
     ssta : xarray.DataArray
-        A 2D or 3D array with sea surface temperature anomalies that correspond to the same time and space as labels.
+        A 3D array with sea surface temperature anomalies that correspond to the same time and space as labels.
     lat_dim : str, optional
         The name of the latitude dimension in the input arrays, by default 'lat'.
     lon_dim : str, optional
