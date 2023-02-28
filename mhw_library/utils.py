@@ -168,7 +168,7 @@ def count_objects(merged_xarray: xr.Dataset) -> int:
     """
     return len(np.unique(merged_xarray.labels)) - 1
 
-def calc_initialization(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[int, xr.DataArray, int]:
+def get_initial_state(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[int, xr.DataArray, int]:
     """
     Get initialization state information for a specific object in a merged xarray.
 
@@ -197,7 +197,7 @@ def calc_initialization(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[int, xr
     first_timestep = mhw_when[0][0]
     bymonth = np.resize(np.arange(1,13),12*166)[1:-11]
     month = bymonth[first_timestep]
-    return first_timestep, one_obj.SSTA[first_timestep,:,:], month
+    return first_timestep, month, one_obj.SSTA[first_timestep,:,:]
 
 def convert_timestep_to_month(time_stamp: int) -> int:
     """

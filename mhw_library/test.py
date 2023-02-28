@@ -1,6 +1,8 @@
 import numpy as np
 import xarray as xr
 import pytest
+import measures
+import utils
 
 def test_calc_duration():
     # Create test data

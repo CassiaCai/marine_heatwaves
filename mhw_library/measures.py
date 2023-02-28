@@ -28,7 +28,7 @@ def calc_duration(merged_xarray: xr.Dataset, mhw_id: int) -> int:
     """
     return len(merged_xarray.where(merged_xarray.labels==mhw_id, drop=True).time)
 
-def calc_cumulative_intensity(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[float, xr.DataArray]:
+def calc_total_intensity(merged_xarray: xr.Dataset, mhw_id: int) -> Tuple[float, xr.DataArray]:
     """
     Calculates the cumulative intensity of the object identifier in the merged_xarray,
     (1) as the sum of all its grid points over all timesteps,
@@ -144,7 +144,7 @@ def calc_spatial_extent(
     coords_full: bool = False
 ):
     """
-    Calculates the spatial extent of an object (area)
+    Calculates the spatial extent of an object (area) in km2
     
     Parameters
     ----------
@@ -157,11 +157,11 @@ def calc_spatial_extent(
     -------
     dict
         Dictionary containing the following keys:
-        - spatial_extents: List of areas for each time step
-        - max_spatial_extent: Maximum area of the object
+        - spatial_extents: List of areas for each time step in km
+        - max_spatial_extent: Maximum area of the object in km2
         - max_spatial_extent_time: Time step when the object had the maximum area
-        - mean_spatial_extent: Mean area of the object
-        - cumulative_spatial_extent: Cumulative area of the object
+        - mean_spatial_extent: Mean area of the object in km2
+        - cumulative_spatial_extent: Cumulative area of the object in km2
         - coords_full (optional): List of coordinates for each time step
     """
     one_obj = merged_xarray.where(merged_xarray.labels == mhw_id, drop=True)
@@ -201,7 +201,7 @@ def calc_spatial_extent(
 
 def calc_perimeter(merged_xarray: xr.Dataset, mhw_id: int, duration: int) -> list:
     """
-    Calculates the perimeter of the object at each timestamp.
+    Calculates the perimeter of the object at each timestamp in km.
 
     Parameters
     ----------
@@ -215,11 +215,11 @@ def calc_perimeter(merged_xarray: xr.Dataset, mhw_id: int, duration: int) -> lis
     Returns
     -------
     list
-        A list of perimeters of the object at each timestamp.
+        A list of perimeters of the object at each timestamp in km.
     """
     obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    timesteps = np.arange(utils.calc_initialization(merged_xarray, mhw_id)[:2][0], 
-                          utils.calc_initialization(merged_xarray, mhw_id)[:2][0]+duration)
+    timesteps = np.arange(utils.get_initial_state(merged_xarray, mhw_id)[:2][0], 
+                          utils.get_initial_state(merged_xarray, mhw_id)[:2][0]+duration)
     long_range = interp1d([0,360],[-180,180])
     perimeters = []
     
@@ -312,10 +312,10 @@ def calc_complement_to_deformormation(coords_full: list, spatial_extents: list) 
 
 def calc_deformation(sharedarea_ls: list) -> np.ndarray:
     """
-    Calculates the deformation, which is a measure of the extent to which an 
-    object deviates from a smooth, circular shape. The deformation is defined 
-    as the fraction of non-overlapped domain occupied by the object at 2 
-    different times.
+    Calculates the deformation, which is a measure of the extent to 
+    which an object deviates(in terms of mismatch area) from its original 
+    shape. The deformation is defined as the fraction of non-overlapped 
+    domain over union occupied by the object at 2 different times.
     
     Parameters
     ----------
@@ -375,7 +375,7 @@ def calc_spatial_cross_correlation(merged_xarray: xr.Dataset, mhw_id: int, durat
         An array containing the spatial cross correlation values for the object at each timestep
     """
     one_obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    first_timestep, first_array, month = utils.calc_initialization(merged_xarray, mhw_id)
+    first_timestep, month, first_array = utils.get_initial_state(merged_xarray, mhw_id)
     timesteps_to_choose_from = np.arange(first_timestep, first_timestep+duration)
     cc_image_array = np.zeros((len(timesteps_to_choose_from), 192,288))    
     
@@ -390,7 +390,7 @@ def calc_spatial_cross_correlation(merged_xarray: xr.Dataset, mhw_id: int, durat
     
     return cc_image_array
 
-def calc_ratio_convexhullarea_vs_objarea(merged_xarray: xr.Dataset, mhw_id: int) -> list:
+def calc_ratio_convexhullarea_vs_area(merged_xarray: xr.Dataset, mhw_id: int) -> list:
     """
     Calculate the ratio of the area of an object to the area of its convex hull.
 
@@ -404,7 +404,7 @@ def calc_ratio_convexhullarea_vs_objarea(merged_xarray: xr.Dataset, mhw_id: int)
     Returns
     -------
     list
-        An list representing the ratio of the area of the object to the area of its convex hull.
+        A list representing the ratio of the area of the object to the area of its convex hull.
         The length of the array is equal to the number of timesteps for which the object is present in the dataset.
     """
     one_obj = merged_xarray.labels.where(merged_xarray.labels==mhw_id)
@@ -537,9 +537,9 @@ def calc_displacement(
     Parameters
     ----------
     labels : xarray.DataArray
-        A 2D or 3D array with labeled regions of interest, where the labels correspond to MHW events.
+        A 3D array with labeled regions of interest, where the labels correspond to MHW events.
     ssta : xarray.DataArray
-        A 2D or 3D array with sea surface temperature anomalies that correspond to the same time and space as labels.
+        A 3D array with sea surface temperature anomalies that correspond to the same time and space as labels.
     lat_dim : str, optional
         The name of the latitude dimension in the input arrays, by default 'lat'.
     lon_dim : str, optional
