@@ -218,8 +218,8 @@ def calc_perimeter(merged_xarray: xr.Dataset, mhw_id: int, duration: int) -> lis
         A list of perimeters of the object at each timestamp in km.
     """
     obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    timesteps = np.arange(utils.calc_initialization(merged_xarray, mhw_id)[:2][0], 
-                          utils.calc_initialization(merged_xarray, mhw_id)[:2][0]+duration)
+    timesteps = np.arange(utils.get_initial_state(merged_xarray, mhw_id)[:2][0], 
+                          utils.get_initial_state(merged_xarray, mhw_id)[:2][0]+duration)
     long_range = interp1d([0,360],[-180,180])
     perimeters = []
     
@@ -375,7 +375,7 @@ def calc_spatial_cross_correlation(merged_xarray: xr.Dataset, mhw_id: int, durat
         An array containing the spatial cross correlation values for the object at each timestep
     """
     one_obj = merged_xarray.where(merged_xarray.labels==mhw_id, drop=False)
-    first_timestep, first_array, month = utils.calc_initialization(merged_xarray, mhw_id)
+    first_timestep, first_array, month = utils.get_initial_state(merged_xarray, mhw_id)
     timesteps_to_choose_from = np.arange(first_timestep, first_timestep+duration)
     cc_image_array = np.zeros((len(timesteps_to_choose_from), 192,288))    
     
