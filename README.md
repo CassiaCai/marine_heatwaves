@@ -1,7 +1,7 @@
 # object tracking metrics
 ![pytest workflow](https://github.com/CassiaCai/marine_heatwaves/actions/workflows/pytest.yml/badge.svg)
 
-We built _____ to enable users to calculate multiple object tracking metrics. 
+We built _____ to enable users to calculate multiple object tracking metrics and to streamline data analysis.
 
 <img width="624" alt="Screen Shot 2023-03-09 at 3 16 35 PM" src="https://user-images.githubusercontent.com/52092892/224182131-311ec5ad-afff-4746-90fa-ba3d8bc3f268.png"> 
 
