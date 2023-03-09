@@ -4,8 +4,8 @@
 <div>
   <iframe id=“inlineFrameExample”
       title=“Inline Frame Example”
-      width=“300”
-      height=“200"
-      src=".figures/threedviz.html">
+      width=“500”
+      height=“500"
+      src=“https://htmlpreview.github.io/?https://raw.githubusercontent.com/CassiaCai/marine_heatwaves/main/figures/threedviz.html”>
   </iframe>
 </div>
