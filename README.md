@@ -1,6 +1,7 @@
 *This is under development.*
 
-#objMeasures
+# objMeasures
+
 ![pytest workflow](https://github.com/CassiaCai/marine_heatwaves/actions/workflows/pytest.yml/badge.svg)
 
 We built **objMeasures** to enable users to calculate multiple object tracking measures. **objMeasures** first developed as an extension of the morphological image processing Python package [Ocetrac](https://github.com/ocetrac/ocetrac), where we worked with tracked unique geospatial features (i.e., sea surface temperature extremes, particle tracer tracks, and chlorophyll-a concentrations among others) in gridded datasets, such as climate model simulations, reanalysis datasets, and observations. The motivation is to compare characteristics between multi-dimensional objects and to compute distances between the objects to understand similarities and streamline the data analysis. 
