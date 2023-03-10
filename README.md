@@ -32,4 +32,4 @@ Figure 1. Three-dimensional visualization of marine heatwaves over time
 ## Wishlist
 
 ## Acknowledgements
-- This work grew from a collaboration with the eScience Institute at UW as part of the 2023 Winter Incubator Program. This project is supported by (1) [NSF OCE 2022874](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2022874&HistoricalAwards=false), (2) the [UW Program on Climate Change Graubard Research Acceleration Fund](https://pcc.uw.edu/research/funding-opportunities/), and (3) the [UW Leo Cup](https://www.ocean.washington.edu/story/Leo_Cup).
+- This work grew from a collaboration with the eScience Institute at the University of Washington (UW) as part of the 2023 Winter Incubator Program. This project is supported by (1) [NSF OCE 2022874](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2022874&HistoricalAwards=false), (2) the [UW Program on Climate Change Graubard Research Acceleration Fund](https://pcc.uw.edu/research/funding-opportunities/), and (3) the [UW Leo Cup](https://www.ocean.washington.edu/story/Leo_Cup).
