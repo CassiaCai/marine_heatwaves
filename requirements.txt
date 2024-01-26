@@ -5,3 +5,5 @@ s3fs
 asyncio
 intake
 expectexception
+scipy
+scikit-image

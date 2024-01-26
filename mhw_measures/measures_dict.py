@@ -1,6 +1,5 @@
 import xarray as xr
 
-from mhw_measures.measures import *
 
 def merged_by_objid(
     mask_field: xr.Dataset, 
